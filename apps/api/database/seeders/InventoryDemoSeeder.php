@@ -4,29 +4,34 @@ namespace Database\Seeders;
 
 use App\Domain\Inventory\Actions\PostInventoryDocument;
 use App\Domain\Inventory\Actions\SaveInventoryDocumentDraft;
-use App\Domain\Inventory\Actions\VoidInventoryDocument;
 use App\Domain\Inventory\Data\DocumentData;
 use App\Domain\Inventory\Exceptions\InsufficientStockException;
-use App\Domain\Inventory\Exceptions\VoidCostInconsistencyException;
 use App\Domain\Inventory\Models\InventoryDocument;
 use App\Domain\Inventory\Models\Product;
 use App\Domain\Inventory\Models\ProductCategory;
 use App\Domain\Inventory\Models\StockBalance;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Models\Warehouse;
+use App\Domain\Sales\Models\Customer;
+use App\Domain\Sales\Models\SalesDocument;
 use App\Domain\Shared\Models\Company;
 use App\Domain\Shared\Models\User;
 use App\Domain\Shared\Tenancy\RunsInCompanyContext;
 use Carbon\CarbonImmutable;
+use Database\Seeders\Demo\DemoCustomers;
+use Database\Seeders\Demo\SalesDesk;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 /**
- * Realistic ~90 days of inventory history for a Santa Cruz trading company.
+ * Realistic ~90 days of operations for a Santa Cruz trading company:
+ * purchases, transfers, count adjustments and REAL SALES to ~120 customers
+ * (each confirmed sale generates its SAL- through the sales engine), plus
+ * receipts according to each customer's payment profile.
  *
- * Every document goes through the REAL engine (SaveDraft -> Post / Void)
- * with a simulated clock, so balances, average costs, numbering and audit
- * logs are exactly what production would produce. Deterministic (fixed seed).
+ * Every document goes through the REAL engines with a simulated clock, so
+ * balances, average costs, receivables, numbering and audit logs are
+ * exactly what production would produce. Deterministic (fixed seed).
  */
 class InventoryDemoSeeder extends Seeder
 {
@@ -88,18 +93,37 @@ class InventoryDemoSeeder extends Seeder
         ['KG', 'Kilogramo', true], ['LT', 'Litro', true], ['M', 'Metro', true],
     ];
 
-    /** Share of the daily demand served by each warehouse. */
+    /** Share of the daily demand served by each warehouse, and its location. */
     private const WAREHOUSES = [
-        ['CEN', 'Central Santa Cruz', '4to anillo, Av. Banzer, Santa Cruz de la Sierra', 0.25],
-        ['EQP', 'Sucursal Equipetrol', 'Calle 9 Oeste, Equipetrol, Santa Cruz de la Sierra', 0.35],
-        ['P3M', 'Sucursal Plan 3000', 'Av. Paurito, Plan 3000, Santa Cruz de la Sierra', 0.40],
+        ['CEN', 'Central Santa Cruz', '4to anillo, Av. Banzer, Santa Cruz de la Sierra', 0.25, '-17.738012', '-63.174521'],
+        ['EQP', 'Sucursal Equipetrol', 'Calle 9 Oeste, Equipetrol, Santa Cruz de la Sierra', 0.35, '-17.765034', '-63.198470'],
+        ['P3M', 'Sucursal Plan 3000', 'Av. Paurito, Plan 3000, Santa Cruz de la Sierra', 0.40, '-17.823517', '-63.124033'],
     ];
+
+    /** Price list markup over the base cost (price VAT included). Min price: cost x 1.25. */
+    private const MARKUP = [
+        'Abarrotes' => 1.45, 'Bebidas' => 1.50, 'Limpieza' => 1.55,
+        'Cuidado personal' => 1.60, 'Ferretería' => 1.65, 'Eléctricos' => 1.70,
+    ];
+
+    /** Sales per day and warehouse: [min, max]. */
+    private const SALES_PER_DAY = ['CEN' => [2, 4], 'EQP' => [3, 5], 'P3M' => [3, 6]];
 
     private string $timezone = 'America/La_Paz';
 
     private User $admin;
 
     private User $storekeeper;
+
+    private SalesDesk $desk;
+
+    /** @var array<string, list<Customer>> warehouse code => customers it serves */
+    private array $pools = [];
+
+    private Customer $walkIn;
+
+    /** @var array<int, list<SalesDocument>> day => cash sales (candidates for a void) */
+    private array $cashSales = [];
 
     /** @var array<int, array<int, float>> warehouse_id => product_id => planned stock */
     private array $stock = [];
@@ -118,11 +142,15 @@ class InventoryDemoSeeder extends Seeder
         $company = Company::query()->where('tax_id', '1020304050')->firstOrFail();
         $this->admin = User::query()->withoutGlobalScopes()->where('email', DemoCompanySeeder::ADMIN_EMAIL)->firstOrFail();
         $this->storekeeper = User::query()->withoutGlobalScopes()->where('email', 'almacenero@ccp.test')->firstOrFail();
+        $seller = User::query()->withoutGlobalScopes()->where('email', 'vendedor@ccp.test')->firstOrFail();
+        $manager = User::query()->withoutGlobalScopes()->where('email', 'gerente@ccp.test')->firstOrFail();
+        $this->desk = new SalesDesk($seller, $manager, self::DAYS);
 
         $this->inCompany($company, function (Company $company) {
             $this->timezone = $company->timezone;
             mt_srand(self::SEED);
             $this->catalog();
+            $this->customers($company);
 
             $start = CarbonImmutable::now($company->timezone)->startOfDay()->subDays(self::DAYS);
             try {
@@ -133,6 +161,7 @@ class InventoryDemoSeeder extends Seeder
             }
 
             $this->pendingDrafts(CarbonImmutable::now($company->timezone));
+            $this->quotes(CarbonImmutable::now($company->timezone));
         });
     }
 
@@ -143,8 +172,10 @@ class InventoryDemoSeeder extends Seeder
             $units[$code] = Unit::query()->updateOrCreate(['code' => $code], ['name' => $name, 'allows_decimals' => $decimals]);
         }
 
-        foreach (self::WAREHOUSES as [$code, $name, $address]) {
-            $this->warehouses[] = Warehouse::query()->updateOrCreate(['code' => $code], ['name' => $name, 'address' => $address, 'is_active' => true]);
+        foreach (self::WAREHOUSES as [$code, $name, $address, , $lat, $lng]) {
+            $this->warehouses[] = Warehouse::query()->updateOrCreate(['code' => $code], [
+                'name' => $name, 'address' => $address, 'latitude' => $lat, 'longitude' => $lng, 'is_active' => true,
+            ]);
         }
 
         $categories = [];
@@ -157,6 +188,8 @@ class InventoryDemoSeeder extends Seeder
                 'unit_id' => $units[$unit]->id,
                 'barcode' => '777'.str_pad((string) crc32($sku) % 10_000_000_000, 10, '0', STR_PAD_LEFT),
                 'min_stock' => (string) $min,
+                'sale_price' => number_format(round($cost * self::MARKUP[$category] * 10) / 10, 2, '.', ''),
+                'min_price' => number_format($cost * 1.25, 2, '.', ''),
                 'is_active' => true,
             ]);
             $this->meta[$sku] = ['min' => $min, 'demand' => $demand, 'cost' => $cost, 'fractional' => $units[$unit]->allows_decimals];
@@ -169,10 +202,35 @@ class InventoryDemoSeeder extends Seeder
         }
     }
 
+    /**
+     * ~120 customers in real zones (DemoCustomers) + the walk-in customer
+     * "Sin nombre / S/N" used for anonymous counter sales (and the POS).
+     */
+    private function customers(Company $company): void
+    {
+        foreach (DemoCustomers::build() as $data) {
+            $warehouse = $data['warehouse'];
+            $profile = $data['payment_profile'];
+            unset($data['warehouse'], $data['payment_profile']);
+
+            $customer = Customer::query()->updateOrCreate(
+                ['document_type' => $data['document_type'], 'document_number' => $data['document_number'], 'complement' => $data['complement']],
+                [...$data, 'is_active' => true],
+            );
+            $this->pools[$warehouse][] = $customer;
+            $this->desk->profile($customer, $profile);
+        }
+
+        $this->walkIn = Customer::query()->updateOrCreate(
+            ['document_type' => 'ci', 'document_number' => '0', 'complement' => ''],
+            ['name' => 'Sin nombre / S/N', 'segment' => 'retail', 'payment_terms' => 'cash', 'city' => 'Santa Cruz de la Sierra', 'department' => 'Santa Cruz', 'is_active' => true],
+        );
+        $company->forceFill(['default_customer_id' => $this->walkIn->id])->save();
+    }
+
     private function simulate(CarbonImmutable $start): void
     {
         [$central, $equipetrol, $plan3000] = $this->warehouses;
-        $exitsByDay = [];
 
         for ($day = 0; $day <= self::DAYS; $day++) {
             $date = $start->addDays($day);
@@ -198,19 +256,19 @@ class InventoryDemoSeeder extends Seeder
             }
 
             foreach ($this->warehouses as $i => $warehouse) {
-                $doc = $this->at($clock->setTime(19, 0)->addMinutes(10 * $i), fn () => $this->dailyExit($warehouse, $day, $date));
-                if ($doc) {
-                    $exitsByDay[$day][] = $doc;
-                }
+                $this->dailySales($warehouse, $day, $date, $clock->setTime(9, 30)->addMinutes(7 * $i));
             }
+
+            $this->at($clock->setTime(18, 0), fn () => $this->desk->settle($date));
 
             if ($day % 12 === 6) {
                 $this->at($clock->setTime(20, 0), fn () => $this->countAdjustment($this->warehouses[$day % 3], $day));
             }
 
-            // A few voids, as real users make mistakes.
-            if (in_array($day, [21, 48, 77], true) && isset($exitsByDay[$day - 1][0])) {
-                $this->at($clock->setTime(10, 5), fn () => $this->voidDoc($exitsByDay[$day - 1][0], 'Venta registrada dos veces por error de caja.'));
+            // A few voids, as real users make mistakes (sale + its SAL- + its receipt).
+            if (in_array($day, [21, 48, 77], true) && isset($this->cashSales[$day - 1][0])) {
+                $this->at($clock->setTime(10, 5), fn () => $this->desk->void($this->cashSales[$day - 1][0], 'Venta registrada dos veces por error de caja.'));
+                $this->syncStock();
             }
         }
     }
@@ -267,14 +325,20 @@ class InventoryDemoSeeder extends Seeder
         ], $this->storekeeper);
     }
 
-    private function dailyExit(Warehouse $warehouse, int $day, CarbonImmutable $date): ?InventoryDocument
+    /**
+     * The day's demand of a warehouse, split into several real sales to the
+     * customers it serves (plus walk-in counter sales at the branches).
+     */
+    private function dailySales(Warehouse $warehouse, int $day, CarbonImmutable $date, CarbonImmutable $clock): void
     {
         $weekday = match ($date->dayOfWeekIso) {
             5 => 1.15, 6 => 1.35, 7 => 0.65, default => 1.0
         };
         $trend = 1 + 0.003 * $day;
         $share = $this->share($warehouse);
-        $lines = [];
+        [$min, $max] = self::SALES_PER_DAY[$warehouse->code];
+        $count = mt_rand($min, $max);
+        $baskets = array_fill(0, $count, []);
 
         foreach ($this->products as $sku => $product) {
             if (mt_rand(1, 100) > 72) {
@@ -286,13 +350,90 @@ class InventoryDemoSeeder extends Seeder
             if ($quantity < ($m['fractional'] ? 0.25 : 1)) {
                 continue;
             }
-            $lines[] = ['product_id' => $product->id, 'quantity' => $this->qty($quantity, $m['fractional'], floor: true)];
+            $baskets[mt_rand(0, $count - 1)][] = [$product, $this->qty($quantity, $m['fractional'], floor: true)];
         }
 
-        return $this->postDoc('exit', $warehouse, $lines, [
-            'reference' => sprintf('VTA-%s-%s', $warehouse->code, $date->format('ymd')),
-            'notes' => 'Ventas del día (consolidado de caja)',
-        ], $this->admin);
+        foreach ($baskets as $i => $basket) {
+            $customer = $this->pickCustomer($warehouse, $i);
+            $lines = array_map(fn (array $item) => $this->saleLine($item[0], $item[1], $customer), $basket);
+            $lines = array_values(array_filter($lines, fn (array $l) => (float) $l['quantity'] > 0));
+            $global = $customer->segment->value === 'corporate' && $i % 2 === 0 ? $this->globalDiscount($lines) : '0';
+
+            $sale = $this->at($clock->addMinutes(55 * $i + mt_rand(0, 40)), fn () => $this->desk->sell($customer, $warehouse->id, $lines, $date, $day, $global));
+            if ($sale !== null) {
+                $this->syncStock();
+                if ($sale->payment_terms->value === 'cash') {
+                    $this->cashSales[$day][] = $sale;
+                }
+            }
+        }
+    }
+
+    private function pickCustomer(Warehouse $warehouse, int $index): Customer
+    {
+        // Branches: the first basket of the day is usually anonymous counter sales.
+        if ($warehouse->code !== 'CEN' && $index === 0 && mt_rand(1, 100) <= 70) {
+            return $this->walkIn;
+        }
+
+        $pool = $this->pools[$warehouse->code];
+
+        return $pool[mt_rand(0, count($pool) - 1)];
+    }
+
+    /**
+     * Price from the list; wholesale customers get a small line discount.
+     *
+     * @return array{product_id: int, quantity: string, unit_price: string, discount_amount: string}
+     */
+    private function saleLine(Product $product, string $quantity, Customer $customer): array
+    {
+        $price = (string) $product->sale_price;
+        $discount = '0';
+        if ($customer->segment->value === 'wholesale') {
+            $gross = round((float) $quantity * (float) $price, 2);
+            $discount = number_format(round($gross * mt_rand(2, 6) / 100, 2), 2, '.', '');
+        }
+
+        return ['product_id' => $product->id, 'quantity' => $quantity, 'unit_price' => $price, 'discount_amount' => $discount];
+    }
+
+    /**
+     * Corporate customers sometimes get a rounded global discount (1-3 %).
+     *
+     * @param  list<array{quantity: string, unit_price: string, discount_amount: string}>  $lines
+     */
+    private function globalDiscount(array $lines): string
+    {
+        $total = array_sum(array_map(fn (array $l) => (float) $l['quantity'] * (float) $l['unit_price'] - (float) $l['discount_amount'], $lines));
+
+        return number_format(floor($total * mt_rand(1, 3) / 100), 2, '.', '');
+    }
+
+    /**
+     * A few quotes for the UI: valid ones, an expired one, a draft and a
+     * converted one.
+     */
+    private function quotes(CarbonImmutable $today): void
+    {
+        $corporate = array_values(array_filter($this->pools['EQP'], fn (Customer $c) => $c->segment->value === 'corporate'));
+        $line = fn (string $sku, string $qty) => [
+            'product_id' => $this->products[$sku]->id, 'quantity' => $qty, 'unit_price' => (string) $this->products[$sku]->sale_price,
+        ];
+        $warehouse = $this->warehouses[1]->id;
+
+        try {
+            $this->at($today->subDays(20)->setTime(11, 0), fn () => $this->desk->quote($corporate[0], $warehouse, [$line('ELE-001', '500'), $line('ELE-003', '40')], $today->subDays(20), 10));
+            $this->at($today->subDays(6)->setTime(11, 0), fn () => $this->desk->quote($corporate[1], $warehouse, [$line('LIM-001', '24'), $line('LIM-005', '36'), $line('LIM-002', '60')], $today->subDays(6), 15));
+            $this->at($today->subDays(2)->setTime(16, 0), fn () => $this->desk->quote($corporate[2], $warehouse, [$line('ABA-001', '200'), $line('ABA-002', '150')], $today->subDays(2), 15));
+            $converted = $this->at($today->subDays(4)->setTime(10, 0), fn () => $this->desk->quote($corporate[1], $warehouse, [$line('BEB-002', '48'), $line('BEB-003', '72')], $today->subDays(4), 15));
+            $this->at($today->setTime(8, 30), fn () => $this->desk->convert($converted));
+            $this->at($today->setTime(8, 45), fn () => $this->desk->quote($corporate[0], $warehouse, [$line('FER-004', '40'), $line('FER-005', '20')], $today, 15, post: false));
+        } finally {
+            Carbon::setTestNow();
+            CarbonImmutable::setTestNow();
+        }
+        $this->syncStock();
     }
 
     private function countAdjustment(Warehouse $warehouse, int $day): ?InventoryDocument
@@ -347,16 +488,6 @@ class InventoryDemoSeeder extends Seeder
         $this->syncStock();
 
         return $doc;
-    }
-
-    private function voidDoc(InventoryDocument $doc, string $reason): void
-    {
-        try {
-            app(VoidInventoryDocument::class)->handle($doc, $this->admin, $reason);
-        } catch (InsufficientStockException|VoidCostInconsistencyException) {
-            return;
-        }
-        $this->syncStock();
     }
 
     /** Leaves two realistic drafts pending for the UI. */

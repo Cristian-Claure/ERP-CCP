@@ -7,6 +7,12 @@ export interface Company {
   timezone: string
   allow_negative_stock: boolean
   document_backdate_days: number
+  sales_note_vat_breakdown: boolean
+  quote_validity_days: number
+  default_customer_id: number | null
+  email: string | null
+  phone: string | null
+  address: string | null
 }
 
 export interface AuthUser {
