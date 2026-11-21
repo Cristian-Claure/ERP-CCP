@@ -19,6 +19,7 @@ function startWorker(InventoryDocument $document, InventoryScenario $s): Process
         base_path(),
         [
             'APP_ENV' => 'testing',
+            'APP_KEY' => (string) config('app.key'),
             'DB_CONNECTION' => 'pgsql',
             'DB_HOST' => $db['host'],
             'DB_PORT' => (string) $db['port'],
