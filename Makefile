@@ -37,7 +37,7 @@ test-api:
 	$(API) php artisan test
 
 test-ai:
-	$(AI) pytest -q -p no:cacheprovider
+	$(AI) python -m pytest -q -p no:cacheprovider
 
 test-web:
 	$(WEB) npm run test
