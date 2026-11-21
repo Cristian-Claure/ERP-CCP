@@ -5,6 +5,10 @@ use App\Http\Controllers\Api\V1\Inventory\DocumentController;
 use App\Http\Controllers\Api\V1\Inventory\InventoryOverviewController;
 use App\Http\Controllers\Api\V1\Inventory\KardexController;
 use App\Http\Controllers\Api\V1\Inventory\ProductController;
+use App\Http\Controllers\Api\V1\Sales\CustomerController;
+use App\Http\Controllers\Api\V1\Sales\PaymentController;
+use App\Http\Controllers\Api\V1\Sales\SalesDocumentController;
+use App\Http\Controllers\Api\V1\Sales\SalesOverviewController;
 use App\Http\Controllers\Api\V1\Shared\AuthController;
 use App\Http\Controllers\Api\V1\Shared\HealthController;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +59,37 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             Route::post('documents/{document}/post', [DocumentController::class, 'post'])->name('documents.post');
             Route::post('documents/{document}/void', [DocumentController::class, 'void'])->name('documents.void');
         });
+
+        // ---- Sales -------------------------------------------------------------
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::get('customers/cities', [CustomerController::class, 'cities'])->name('customers.cities');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::get('customers/{customer}/statement', [CustomerController::class, 'statement'])->name('customers.statement');
+
+        Route::prefix('sales')->name('sales.')->group(function (): void {
+            Route::get('documents', [SalesDocumentController::class, 'index'])->name('documents.index');
+            Route::post('documents', [SalesDocumentController::class, 'store'])->name('documents.store');
+            Route::get('documents/{document}', [SalesDocumentController::class, 'show'])->name('documents.show');
+            Route::put('documents/{document}', [SalesDocumentController::class, 'update'])->name('documents.update');
+            Route::delete('documents/{document}', [SalesDocumentController::class, 'destroy'])->name('documents.destroy');
+            Route::post('documents/{document}/post', [SalesDocumentController::class, 'post'])->name('documents.post');
+            Route::post('documents/{document}/void', [SalesDocumentController::class, 'void'])->name('documents.void');
+            Route::post('documents/{document}/convert', [SalesDocumentController::class, 'convert'])->name('documents.convert');
+        });
+
+        Route::prefix('receivables')->name('receivables.')->group(function (): void {
+            Route::get('summary', [SalesOverviewController::class, 'receivables'])->name('summary');
+            Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+            Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+            Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+            Route::post('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
+        });
+
+        Route::get('dashboard/sales', [SalesOverviewController::class, 'dashboard'])->name('dashboard.sales');
+        Route::get('settings/sales', [SalesOverviewController::class, 'settings'])->name('settings.sales');
+        Route::patch('settings/sales', [SalesOverviewController::class, 'updateSettings'])->name('settings.sales.update');
 
         Route::get('dashboard/inventory', [InventoryOverviewController::class, 'dashboard'])->name('dashboard.inventory');
         Route::get('settings/inventory', [InventoryOverviewController::class, 'settings'])->name('settings.inventory');

@@ -25,6 +25,13 @@ class CompanyResource extends JsonResource
             'timezone' => $this->timezone,
             'allow_negative_stock' => $this->allow_negative_stock,
             'document_backdate_days' => $this->document_backdate_days,
+            'sales_note_vat_breakdown' => $this->sales_note_vat_breakdown,
+            'quote_validity_days' => $this->quote_validity_days,
+            'default_customer_id' => $this->default_customer_id,
+            // Printed documents header.
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'address' => $this->address,
         ];
     }
 }
