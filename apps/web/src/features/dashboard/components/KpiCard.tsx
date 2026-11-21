@@ -32,7 +32,7 @@ interface KpiCardProps {
 export function KpiCard({ kpi, currency }: KpiCardProps) {
   const gradientId = useId()
   const { icon: Icon, color } = ICONS[kpi.key]
-  const isUp = kpi.delta >= 0
+  const isUp = (kpi.delta ?? 0) >= 0
   const isGood = isUp === kpi.higherIsBetter
   const value = kpi.format === 'currency' ? formatCurrency(kpi.value, currency) : formatInteger(kpi.value)
 
@@ -40,7 +40,17 @@ export function KpiCard({ kpi, currency }: KpiCardProps) {
     <Card className="group relative gap-0 overflow-hidden p-5 transition-colors hover:border-brand/30">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
-          <p className="text-[13px] font-medium text-muted-foreground">{kpi.label}</p>
+          <p className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+            {kpi.label}
+            {kpi.source === 'demo' && (
+              <span
+                className="rounded border px-1 text-[9px] font-semibold tracking-wider uppercase"
+                title="Dato de ejemplo hasta que el módulo esté disponible"
+              >
+                demo
+              </span>
+            )}
+          </p>
           <p className="num truncate text-[22px] leading-tight font-semibold tracking-tight 2xl:text-[26px]">
             {value}
           </p>
@@ -58,40 +68,44 @@ export function KpiCard({ kpi, currency }: KpiCardProps) {
 
       <div className="mt-4 flex items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span
-            className={cn(
-              'num inline-flex w-fit items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold',
-              isGood ? 'bg-success/12 text-success' : 'bg-destructive/12 text-destructive',
-            )}
-          >
-            {isUp ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
-            {formatPercent(kpi.delta)}
-          </span>
+          {kpi.delta !== null && (
+            <span
+              className={cn(
+                'num inline-flex w-fit items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold',
+                isGood ? 'bg-success/12 text-success' : 'bg-destructive/12 text-destructive',
+              )}
+            >
+              {isUp ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
+              {formatPercent(kpi.delta)}
+            </span>
+          )}
           <span className="text-xs text-muted-foreground">{kpi.hint}</span>
         </div>
-        <div className="h-10 w-24" aria-hidden>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={kpi.trend.map((v, i) => ({ i, v }))}
-              margin={{ top: 2, right: 0, bottom: 0, left: 0 }}
-            >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="v"
-                stroke={color}
-                strokeWidth={1.75}
-                fill={`url(#${gradientId})`}
-                isAnimationActive={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        {kpi.trend && (
+          <div className="h-10 w-24" aria-hidden>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={kpi.trend.map((v, i) => ({ i, v }))}
+                margin={{ top: 2, right: 0, bottom: 0, left: 0 }}
+              >
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke={color}
+                  strokeWidth={1.75}
+                  fill={`url(#${gradientId})`}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </Card>
   )
