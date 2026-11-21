@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Domain\Shared\Exceptions\DomainException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -37,6 +38,7 @@ class ApiExceptionRenderer
         }
 
         return match (true) {
+            $e instanceof DomainException => $this->respond($e->status(), $e->errorCode(), $e->getMessage(), $e->details()),
             $e instanceof ValidationException => $this->respond(422, 'validation_failed', 'Los datos enviados no son válidos.', $e->errors()),
             $e instanceof AuthenticationException => $this->respond(401, 'unauthenticated', 'No has iniciado sesión o tu sesión expiró.'),
             $e instanceof AuthorizationException,
