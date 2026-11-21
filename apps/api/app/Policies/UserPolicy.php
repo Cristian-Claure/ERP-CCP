@@ -6,7 +6,8 @@ use App\Models\User;
 
 /**
  * Base policy for user management (endpoints arrive in a later phase).
- * Always checks permission AND same company.
+ * Permissions are already team-scoped to the actor's active company; the
+ * target must also be a member of that company.
  */
 class UserPolicy
 {
@@ -18,11 +19,11 @@ class UserPolicy
     public function view(User $actor, User $target): bool
     {
         return $actor->id === $target->id
-            || ($actor->can('users.manage') && $actor->company_id === $target->company_id);
+            || ($actor->can('users.manage') && $target->belongsToCompany($actor->company_id));
     }
 
     public function update(User $actor, User $target): bool
     {
-        return $actor->can('users.manage') && $actor->company_id === $target->company_id;
+        return $actor->can('users.manage') && $target->belongsToCompany($actor->company_id);
     }
 }

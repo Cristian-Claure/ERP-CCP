@@ -28,13 +28,17 @@ class LoginUser
         $user = $guard->user();
         $user->loadMissing('company');
 
-        if (! $user->is_active || ! $user->company->is_active) {
+        if (! $user->is_active || ! $user->company?->is_active || ! $user->belongsToCompany($user->company_id)) {
             $guard->logout();
 
             throw ValidationException::withMessages([
                 'email' => 'Tu cuenta está desactivada. Contacta al administrador.',
             ]);
         }
+
+        // Roles/permissions are resolved per active company (spatie teams).
+        setPermissionsTeamId($user->company_id);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
 
         // Prevent session fixation.
         request()->session()->regenerate();

@@ -16,13 +16,13 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             ->middleware('throttle:login')
             ->name('login');
 
-        Route::middleware('auth:sanctum')->group(function (): void {
+        Route::middleware(['auth:sanctum', 'company'])->group(function (): void {
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('me', [AuthController::class, 'me'])->name('me');
         });
     });
 
-    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'company', 'throttle:api'])->group(function (): void {
         // Business modules (inventory, sales, ...) are registered here from Phase 1.
     });
 });
