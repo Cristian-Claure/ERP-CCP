@@ -269,7 +269,9 @@ class InventoryDemoSeeder extends Seeder
 
     private function dailyExit(Warehouse $warehouse, int $day, CarbonImmutable $date): ?InventoryDocument
     {
-        $weekday = match ($date->dayOfWeekIso) { 5 => 1.15, 6 => 1.35, 7 => 0.65, default => 1.0 };
+        $weekday = match ($date->dayOfWeekIso) {
+            5 => 1.15, 6 => 1.35, 7 => 0.65, default => 1.0
+        };
         $trend = 1 + 0.003 * $day;
         $share = $this->share($warehouse);
         $lines = [];

@@ -26,11 +26,11 @@ use Illuminate\Validation\Rule;
  */
 class CatalogController extends Controller
 {
-    public function warehouses(): AnonymousResourceCollection
+    public function warehouses(): JsonResponse
     {
         Gate::authorize('viewAny', Warehouse::class);
 
-        return WarehouseResource::collection(Warehouse::query()->orderBy('name')->get());
+        return $this->list(WarehouseResource::collection(Warehouse::query()->orderBy('name')->get()));
     }
 
     public function storeWarehouse(SaveWarehouseRequest $request, AuditLogger $audit): JsonResponse
@@ -54,11 +54,11 @@ class CatalogController extends Controller
         return WarehouseResource::make($warehouse);
     }
 
-    public function categories(): AnonymousResourceCollection
+    public function categories(): JsonResponse
     {
         Gate::authorize('viewAny', Product::class);
 
-        return CategoryResource::collection(ProductCategory::query()->orderBy('name')->get());
+        return $this->list(CategoryResource::collection(ProductCategory::query()->orderBy('name')->get()));
     }
 
     public function storeCategory(Request $request): JsonResponse
@@ -72,11 +72,20 @@ class CatalogController extends Controller
         return CategoryResource::make(ProductCategory::query()->create($data))->response()->setStatusCode(201);
     }
 
-    public function units(): AnonymousResourceCollection
+    public function units(): JsonResponse
     {
         Gate::authorize('viewAny', Product::class);
 
-        return UnitResource::collection(Unit::query()->orderBy('name')->get());
+        return $this->list(UnitResource::collection(Unit::query()->orderBy('name')->get()));
+    }
+
+    /**
+     * Non-paginated collections always use the {data: [...]} envelope too
+     * (JsonResource::withoutWrapping() only applies to single resources here).
+     */
+    private function list(AnonymousResourceCollection $collection): JsonResponse
+    {
+        return response()->json(['data' => $collection->resolve()]);
     }
 
     public function adjustmentReasons(): JsonResponse
