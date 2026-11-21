@@ -108,18 +108,13 @@ class PostInventoryDocument
             DocumentType::Adjustment => $this->adjust($doc, $line, $session),
         };
 
-        if ($result === null) { // adjustment without difference
-            $line->forceFill(['total_cost' => '0'])->save();
+        // Single write per line: cost snapshot (+ adjustment quantities set above).
+        $line->forceFill($result === null
+            ? ['total_cost' => '0'] // adjustment without difference
+            : ['unit_cost' => (string) $result->unitCost, 'total_cost' => (string) Decimal::abs($result->totalCost)]
+        )->save();
 
-            return new Number('0');
-        }
-
-        $line->forceFill([
-            'unit_cost' => (string) $result->unitCost,
-            'total_cost' => (string) Decimal::abs($result->totalCost),
-        ])->save();
-
-        return $result->totalCost;
+        return $result?->totalCost ?? new Number('0');
     }
 
     /**
@@ -135,18 +130,16 @@ class PostInventoryDocument
     }
 
     /**
-     * Difference computed against the balance AT POSTING TIME.
+     * Difference computed against the balance AT POSTING TIME. Snapshots the
+     * system and difference quantities on the line (persisted by applyLine).
      */
     private function adjust(InventoryDocument $doc, InventoryDocumentLine $line, LedgerSession $session): ?MovementResult
     {
         $balance = $session->balance($line->product_id, $doc->warehouse_id);
-        $counted = new Number($line->counted_quantity);
-        $difference = $counted - $balance->quantity;
+        $difference = new Number($line->counted_quantity) - $balance->quantity;
 
-        $line->forceFill([
-            'system_quantity' => (string) $balance->quantity,
-            'quantity' => (string) $difference,
-        ]);
+        $line->system_quantity = (string) $balance->quantity;
+        $line->quantity = (string) $difference;
 
         if ($difference == 0) {
             return null;
@@ -156,14 +149,28 @@ class PostInventoryDocument
             return $session->issue($line->id, $line->product_id, $doc->warehouse_id, MovementKind::AdjustOut, Decimal::abs($difference));
         }
 
-        $unitCost = $line->unit_cost !== null ? new Number($line->unit_cost) : $balance->avgCost;
-        if ($line->unit_cost === null && $balance->avgCost == 0) {
+        return $session->receive($line->id, $line->product_id, $doc->warehouse_id, MovementKind::AdjustIn, $difference, $this->surplusUnitCost($line, $balance->avgCost));
+    }
+
+    /**
+     * A surplus enters at the cost typed on the line or, if none, at the
+     * current average. Without either there is no way to value it.
+     *
+     * @throws InvalidDocumentException
+     */
+    private function surplusUnitCost(InventoryDocumentLine $line, Number $avgCost): Number
+    {
+        if ($line->unit_cost !== null) {
+            return new Number($line->unit_cost);
+        }
+
+        if ($avgCost == 0) {
             throw InvalidDocumentException::with([
                 "lines.{$line->position}.unit_cost" => 'El producto no tiene costo previo: ingresa el costo unitario del sobrante.',
             ]);
         }
 
-        return $session->receive($line->id, $line->product_id, $doc->warehouse_id, MovementKind::AdjustIn, $difference, $unitCost);
+        return $avgCost;
     }
 
     /**
