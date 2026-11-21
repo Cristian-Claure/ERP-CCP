@@ -38,7 +38,7 @@ class DocumentController extends Controller
         Gate::authorize('viewAny', InventoryDocument::class);
 
         $documents = QueryBuilder::for(InventoryDocument::query()->with(['warehouse', 'destinationWarehouse', 'creator'])->withCount('lines'))
-            ->allowedFilters([
+            ->allowedFilters(...[
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('type'),
                 AllowedFilter::callback('warehouse_id', fn (Builder $q, $value) => $q->where(fn (Builder $w) => $w
@@ -50,7 +50,7 @@ class DocumentController extends Controller
                 AllowedFilter::callback('date_from', fn (Builder $q, $value) => $q->whereDate('document_date', '>=', $value)),
                 AllowedFilter::callback('date_to', fn (Builder $q, $value) => $q->whereDate('document_date', '<=', $value)),
             ])
-            ->allowedSorts([
+            ->allowedSorts(...[
                 'document_date', 'number', 'created_at', 'posted_at', 'total_cost',
                 AllowedSort::field('type', 'type'),
             ])

@@ -32,7 +32,7 @@ class ProductController extends Controller
         Gate::authorize('viewAny', Product::class);
 
         $products = QueryBuilder::for($this->queries->productsWithStock()->with(['unit', 'category']))
-            ->allowedFilters([
+            ->allowedFilters(...[
                 AllowedFilter::callback('search', function (Builder $q, $value) {
                     $term = '%'.str_replace(['%', '_'], ['\%', '\_'], (string) $value).'%';
                     $q->where(fn (Builder $w) => $w
@@ -46,7 +46,7 @@ class ProductController extends Controller
                     ? $q->where('products.min_stock', '>', 0)->whereRaw('COALESCE(stock.total_quantity, 0) < products.min_stock')
                     : $q),
             ])
-            ->allowedSorts([
+            ->allowedSorts(...[
                 AllowedSort::field('name', 'products.name'),
                 AllowedSort::field('sku', 'products.sku'),
                 AllowedSort::field('min_stock', 'products.min_stock'),
