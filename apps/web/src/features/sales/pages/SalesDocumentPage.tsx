@@ -14,7 +14,7 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -196,6 +196,14 @@ function SalesEditor({
   const globalDiscount = useWatch({ control: form.control, name: 'global_discount' })
   const { errors, isSubmitting, isDirty } = form.formState
   const { data: customer } = useCustomer(customerId || undefined)
+
+  // A customer preselected from its page (?cliente=) brings its payment terms.
+  const presetTermsFor = initialCustomerId && !document ? initialCustomerId : undefined
+  useEffect(() => {
+    if (presetTermsFor && customer?.id === presetTermsFor && !form.getFieldState('payment_terms').isDirty) {
+      form.setValue('payment_terms', customer.payment_terms)
+    }
+  }, [presetTermsFor, customer, form])
 
   const productIds = useMemo(() => [...new Set(lines.map((l) => l.product_id).filter((v) => v > 0))], [lines])
   const { data: availability } = useStockAvailability(

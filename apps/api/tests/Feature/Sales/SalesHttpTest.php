@@ -89,7 +89,16 @@ it('omits cost and margin without sales.view_margin, and receivables without rec
     $viewer = salesUser($s, 'consulta');
 
     $asViewer = $this->actingAs($viewer)->getJson("/api/v1/customers/{$s->creditCustomer->id}")->assertOk();
-    expect($asViewer->json())->not->toHaveKey('receivables');
+    expect($asViewer->json('id'))->toBe($s->creditCustomer->id)
+        ->and($asViewer->json())->not->toHaveKeys(['receivables', 'aging', 'data']);
+
+    $asManagerCustomer = $this->actingAs($manager)->getJson("/api/v1/customers/{$s->creditCustomer->id}")->assertOk();
+    expect($asManagerCustomer->json('name'))->toBe('Cliente Crédito')
+        ->and($asManagerCustomer->json('receivables.balance'))->not->toBeNull()
+        ->and($asManagerCustomer->json('aging.total'))->not->toBeNull();
+
+    $this->actingAs($viewer);
+    $this->getJson('/api/v1/customers/undefined')->assertNotFound();
     $this->getJson("/api/v1/customers/{$s->creditCustomer->id}/statement")->assertForbidden();
     $this->getJson('/api/v1/customers?filter[debt_status]=overdue')->assertOk(); // filter silently ignored
 });

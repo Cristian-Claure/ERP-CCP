@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\Route;
 | All routes are prefixed with /api (bootstrap/app.php) and versioned here.
 */
 
+// Model ids are numeric: anything else is a 404, never a database error.
+foreach (['product', 'warehouse', 'document', 'customer', 'payment'] as $parameter) {
+    Route::pattern($parameter, '[0-9]+');
+}
+
 Route::prefix('v1')->name('v1.')->group(function (): void {
     Route::get('health', HealthController::class)->name('health');
 

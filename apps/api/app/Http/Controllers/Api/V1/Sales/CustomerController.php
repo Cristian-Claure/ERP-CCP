@@ -115,9 +115,13 @@ class CustomerController extends Controller
         }
         $query->addSelect($this->salesStats());
 
-        $resource = CustomerResource::make($query->firstOrFail());
+        // Same unwrapped shape as every single resource (additional() would force a "data" wrapper).
+        $data = CustomerResource::make($query->firstOrFail())->resolve($request);
+        if ($receivables) {
+            $data['aging'] = $this->receivables->aging($today, $customer->id);
+        }
 
-        return $resource->additional($receivables ? ['aging' => $this->receivables->aging($today, $customer->id)] : [])->response();
+        return response()->json($data);
     }
 
     public function update(SaveCustomerRequest $request, Customer $customer, SaveCustomer $save): CustomerResource
