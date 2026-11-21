@@ -23,6 +23,21 @@ docs/      architecture.md y ADRs (docs/adr/)
 - Auth: Sanctum SPA con cookies (sesión + XSRF). Nada de tokens en localStorage.
 - Ver `docs/architecture.md` y `docs/adr/0001-arquitectura-monorepo.md`.
 
+## Regla de software libre (obligatoria)
+
+- Solo software libre / open source y recursos gratuitos. **Nada** que requiera pago, tarjeta, API key de
+  un servicio comercial ni cuenta en un SaaS. Prohibidos: Mapbox, Google Maps, Cesium ion, geocoding pago,
+  APIs de LLM pagas.
+- Toda librería nueva debe tener licencia **aprobada por la OSI** (MIT, Apache-2.0, BSD, ISC, MPL…).
+  Cualquier excepción se consulta **antes** de instalarla. Ejemplo descartado: `react-leaflet`
+  (Hippocratic-2.1) → wrapper propio sobre `leaflet`.
+- Datos y texturas solo de dominio público o licencias abiertas (NASA, Natural Earth, OpenStreetMap), con
+  atribución en `docs/CREDITS.md`. Dependencias y licencias en `docs/LICENSES.md`
+  (`docs/scripts/build_licenses.py`).
+- Teselas OSM: atribución visible, sin descargas masivas ni *prefetch* agresivo; URL configurable por
+  `.env` (`VITE_MAP_TILE_URL`, `VITE_MAP_TILE_ATTRIBUTION`).
+- IA: modelos locales open source (p. ej. vía Ollama) o librerías Python libres; nunca APIs de pago.
+
 ## Convenciones
 
 - **Código en inglés** (clases, variables, tablas, columnas, rutas de API, commits).
@@ -103,12 +118,23 @@ docs/      architecture.md y ADRs (docs/adr/)
    numeración sin huecos con `DocumentNumberer` dentro de la transacción; posting idempotente;
    `document_date` ≤ hoy y ≥ hoy − `companies.document_backdate_days`. `php artisan inventory:verify [--repair]`.
 9. Auditoría: acciones sensibles registran `audit_logs` (inmutable) vía `App\Domain\Shared\Services\AuditLogger`.
+10. **Ventas (ADR 0005):** `PostSalesDocument` / `VoidSalesDocument` crean y anulan el SAL- **solo** a través de
+    las Actions públicas de inventario (enlace `inventory_documents.source_*` ↔ `sales_documents.inventory_document_id`).
+    Precios con IVA incluido (13 %, desglosado; IT fuera del documento); descuento global prorrateado con residuo a la
+    última línea (`Decimal::prorate`); margen = neto − costo de salida. **Orden de bloqueos en toda escritura de
+    ventas y cobros: cliente → documento(s) → saldos de stock** (el bloqueo del cliente va siempre primero).
+    Crédito se valida antes del SAL-; precio bajo costo/mínimo después (necesita el costo real). Excepciones solo con
+    `sales.authorize_below_cost` / `sales.override_credit_limit` + motivo (auditado). Costos y márgenes en la API solo
+    con `sales.view_margin`; saldos y deuda solo con `receivables.view`.
+11. **Cuentas por cobrar:** `customer_ledger_entries` inmutable (`charge` +, `payment` −, `reversal`), escrito solo por
+    `CustomerLedger`; `customers.balance` y `sales_documents.paid_amount` son cachés. `php artisan customers:verify [--repair]`.
+    La fecha de cualquier documento respeta `DocumentDateWindow` (Shared).
 
 ## Comandos frecuentes
 
 ```bash
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
-make fresh     # migrate:fresh --seed (empresa demo, ~90 días de inventario, admin@ccp.test / password)
+make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, ~90 días de compras, ventas y cobros; admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
@@ -125,6 +151,7 @@ IA (solo dev) http://localhost:8001/docs · Mailpit http://localhost:8025.
 
 ## Notas del entorno
 
+- En Windows, `make` desde **PowerShell** (o `MSYS_NO_PATHCONV=1` en Git Bash: MSYS reescribe `-w /app`).
 - Un único `.env` en la raíz (lo usan compose, Laravel —montado como `/var/www/html/.env`— y FastAPI).
   Variables de dominio (CORS, Sanctum, cookie) **solo** desde `.env`.
 - En Windows, `node_modules` del contenedor web vive en un volumen (no en el bind mount).
