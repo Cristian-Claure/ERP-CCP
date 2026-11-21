@@ -62,6 +62,9 @@ docs/      architecture.md y ADRs (docs/adr/)
 - Datos remotos con TanStack Query; estado de UI con Zustand. Los componentes consumen **hooks**, nunca
   axios directo; los hooks consumen una **capa de servicios** (mock o API, intercambiable).
 - Formularios: React Hook Form + Zod (mensajes en español).
+- **Listados: siempre `DataTable`** (`src/components/data-table`, ver `docs/frontend/data-table.md`): paginación,
+  orden y filtros del lado del servidor con estado en la URL (`useDataTableState`), contrato
+  `?page&per_page&sort=-campo&filter[x]=` → `{data, meta}`. Colecciones simples (catálogos) también usan `{data: [...]}`.
 - Tokens de diseño en `src/index.css`: primario `--brand` #6366F1, acento `--brand-accent` #22D3EE
   (ojo: `--accent` de shadcn es la superficie de hover, no el cian). Números y códigos con la clase `num`
   (JetBrains Mono, tabular). Modo oscuro por defecto.
@@ -125,4 +128,7 @@ IA (solo dev) http://localhost:8001/docs · Mailpit http://localhost:8025.
 - Un único `.env` en la raíz (lo usan compose, Laravel —montado como `/var/www/html/.env`— y FastAPI).
   Variables de dominio (CORS, Sanctum, cookie) **solo** desde `.env`.
 - En Windows, `node_modules` del contenedor web vive en un volumen (no en el bind mount).
+- PHP en dev: `opcache.validate_timestamps=0` (el stat de archivos sobre el bind mount de Windows costaba ~2–3 s
+  por request). `docker/php/dev-reload.sh` vigila `app/ config/ routes/ …` cada 2 s y recarga php-fpm solo;
+  tras `composer require` también se recarga (cambia `composer.lock`). Si algo no se refleja: `docker compose restart api`.
 - `phpunit.xml` fuerza variables con `<env>` y `<server>` porque Docker ya las define en `$_SERVER`.
