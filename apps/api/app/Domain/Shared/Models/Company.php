@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'legal_name', 'tax_id', 'currency', 'timezone', 'allow_negative_stock', 'document_backdate_days', 'email', 'phone', 'address', 'is_active'])]
+#[Fillable(['name', 'legal_name', 'tax_id', 'currency', 'timezone', 'allow_negative_stock', 'document_backdate_days', 'sales_note_vat_breakdown', 'quote_validity_days', 'default_customer_id', 'email', 'phone', 'address', 'is_active'])]
 #[UseFactory(CompanyFactory::class)]
 class Company extends Model
 {
@@ -23,6 +23,8 @@ class Company extends Model
             'is_active' => 'boolean',
             'allow_negative_stock' => 'boolean',
             'document_backdate_days' => 'integer',
+            'sales_note_vat_breakdown' => 'boolean',
+            'quote_validity_days' => 'integer',
         ];
     }
 

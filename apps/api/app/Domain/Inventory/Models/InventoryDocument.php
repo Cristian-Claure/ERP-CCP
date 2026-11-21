@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Lifecycle: draft -> posted -> voided. Posted documents are never edited
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'company_id', 'type', 'status', 'number', 'warehouse_id', 'destination_warehouse_id', 'document_date',
-    'adjustment_reason', 'reference', 'notes', 'total_cost', 'idempotency_key', 'created_by',
+    'adjustment_reason', 'reference', 'source_type', 'source_id', 'notes', 'total_cost', 'idempotency_key', 'created_by',
 ])]
 #[UsePolicy(InventoryDocumentPolicy::class)]
 class InventoryDocument extends Model
@@ -55,6 +56,16 @@ class InventoryDocument extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(InventoryDocumentLine::class, 'document_id')->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Business document that generated this one (e.g. a sale for its SAL-).
+     *
+     * @return MorphTo<Model, $this>
+     */
+    public function source(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     /**

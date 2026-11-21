@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Master data: products are deactivated, never deleted.
  */
-#[Fillable(['company_id', 'category_id', 'unit_id', 'sku', 'barcode', 'name', 'description', 'min_stock', 'is_active'])]
+#[Fillable(['company_id', 'category_id', 'unit_id', 'sku', 'barcode', 'name', 'description', 'min_stock', 'sale_price', 'min_price', 'is_active'])]
 #[UseFactory(ProductFactory::class)]
 #[UsePolicy(ProductPolicy::class)]
 class Product extends Model
@@ -28,6 +28,8 @@ class Product extends Model
     {
         return [
             'min_stock' => 'decimal:4',
+            'sale_price' => 'decimal:2',
+            'min_price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

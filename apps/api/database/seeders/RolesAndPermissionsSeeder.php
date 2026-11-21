@@ -16,7 +16,11 @@ class RolesAndPermissionsSeeder extends Seeder
         'dashboard.view',
         // Inventory: per-action permissions (Phase 1).
         'inventory.view', 'products.manage', 'movements.create', 'movements.post', 'movements.void',
-        'sales.view', 'sales.manage',
+        // Sales (Phase 2): per-action permissions.
+        'customers.view', 'customers.manage',
+        'sales.view', 'sales.create', 'sales.post', 'sales.void',
+        'sales.authorize_below_cost', 'sales.override_credit_limit', 'sales.view_margin',
+        'receivables.view', 'receivables.collect', 'receivables.void',
         'purchases.view', 'purchases.manage',
         'finance.view', 'finance.manage',
         'ai.use', 'forecasts.view',
@@ -29,12 +33,22 @@ class RolesAndPermissionsSeeder extends Seeder
         'gerente' => [
             'dashboard.view',
             'inventory.view', 'products.manage', 'movements.create', 'movements.post', 'movements.void',
-            'sales.view', 'sales.manage',
+            'customers.view', 'customers.manage',
+            'sales.view', 'sales.create', 'sales.post', 'sales.void',
+            'sales.authorize_below_cost', 'sales.override_credit_limit', 'sales.view_margin',
+            'receivables.view', 'receivables.collect', 'receivables.void',
             'purchases.view', 'purchases.manage',
             'finance.view', 'finance.manage',
             'ai.use', 'forecasts.view',
         ],
-        'vendedor' => ['dashboard.view', 'inventory.view', 'sales.view', 'sales.manage', 'ai.use'],
+        // Creates and posts sales and registers receipts; never voids nor authorizes exceptions.
+        'vendedor' => [
+            'dashboard.view', 'inventory.view',
+            'customers.view', 'customers.manage',
+            'sales.view', 'sales.create', 'sales.post',
+            'receivables.view', 'receivables.collect',
+            'ai.use',
+        ],
         // Registers and posts stock documents, but cannot void them nor edit the catalog.
         'almacenero' => ['dashboard.view', 'inventory.view', 'movements.create', 'movements.post', 'purchases.view'],
     ];
