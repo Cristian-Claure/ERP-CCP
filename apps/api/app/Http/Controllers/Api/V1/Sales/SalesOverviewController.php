@@ -48,7 +48,7 @@ class SalesOverviewController extends Controller
                 'previous' => $this->sales->totals($companyId, $prevStart, $prevSameDay),
             ],
             'daily' => $this->sales->daily($companyId, $from90, $today),
-            'top_customers' => $this->sales->topCustomers($companyId, $from90, $today),
+            'top_customers' => $this->sales->topCustomers($companyId, $from90, $today, excludeCustomerId: $user->company->default_customer_id),
             'top_products' => [
                 'metric' => $byMargin ? 'margin' : 'revenue',
                 'items' => $this->sales->topProducts($companyId, $from90, $today, $byMargin),

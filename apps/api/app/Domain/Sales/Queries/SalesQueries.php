@@ -54,10 +54,12 @@ class SalesQueries
     /**
      * @return list<array{customer_id: int, name: string, city: ?string, total: string, count: int}>
      */
-    public function topCustomers(int $companyId, CarbonInterface $from, CarbonInterface $to, int $limit = 5): array
+    public function topCustomers(int $companyId, CarbonInterface $from, CarbonInterface $to, int $limit = 5, ?int $excludeCustomerId = null): array
     {
         return $this->sales($companyId, 's')
             ->join('customers as c', 'c.id', '=', 's.customer_id')
+            // The walk-in customer ("S/N") is not a customer to rank.
+            ->when($excludeCustomerId, fn (Builder $q) => $q->where('c.id', '!=', $excludeCustomerId))
             ->whereBetween('s.document_date', [$from->toDateString(), $to->toDateString()])
             ->groupBy('c.id', 'c.name', 'c.city')
             ->orderByDesc(DB::raw('SUM(s.total)'))

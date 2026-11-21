@@ -220,8 +220,8 @@ final class SalesDesk
                 [$due->subDays(mt_rand(0, 3)), bcdiv($total, '2', 2)],
                 [$due->addDays(mt_rand(10, 30)), $total],
             ],
-            // Pays the first weeks, then stops: leaves overdue debt.
-            'defaulter' => $day < 35 ? [[$due->addDays(mt_rand(5, 15)), $total]] : [],
+            // Pays the first week, then stops: leaves debt overdue up to ~80 days.
+            'defaulter' => $day < 8 ? [[$due->addDays(mt_rand(5, 15)), $total]] : [],
             default => [],
         };
 
