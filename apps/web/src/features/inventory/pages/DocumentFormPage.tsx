@@ -223,7 +223,9 @@ function DocumentEditor({ type, document }: DocumentEditorProps) {
 
   const doPost = async () => {
     try {
-      const saved = isDirty || !document ? await persist(form.getValues() as DocumentFormValues) : document
+      // Parsed values (Zod output): raw form values keep the decimal comma ("1,50").
+      const saved =
+        isDirty || !document ? await persist(documentFormSchema.parse(form.getValues())) : document
       const posted = await post.mutateAsync(saved.id)
       toast.success(`Documento ${posted.number} confirmado`, {
         description: 'Los movimientos de stock fueron registrados.',

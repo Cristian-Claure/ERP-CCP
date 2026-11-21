@@ -269,22 +269,26 @@ function SalesEditor({
     return false
   }
 
+  // Id of the draft once created. A failed post (stock, authorization) keeps the user on this
+  // editor instance — remounting would lose the authorization dialog — so the URL is updated
+  // with replaceState instead of a router navigation.
+  const [draftId, setDraftId] = useState(document?.id)
+
   const persist = async (values: SalesFormValues) => {
-    const saved = await save.mutateAsync({
-      payload: toSalesPayload(values),
-      id: document?.id,
-      idempotencyKey,
-    })
+    const saved = await save.mutateAsync({ payload: toSalesPayload(values), id: draftId, idempotencyKey })
     form.reset(values)
+    if (!draftId) {
+      setDraftId(saved.id)
+      window.history.replaceState(window.history.state, '', `/ventas/documentos/${saved.id}`)
+    }
     return saved
   }
 
   const onSaveDraft = form.handleSubmit(async (values) => {
     setShortages([])
     try {
-      const saved = await persist(values)
+      await persist(values)
       toast.success('Borrador guardado')
-      if (!document) navigate(`/ventas/documentos/${saved.id}`, { replace: true })
     } catch (error) {
       if (!applyServerErrors(error, {}))
         toast.error(error instanceof ApiError ? error.message : 'No se pudo guardar.')
@@ -293,10 +297,10 @@ function SalesEditor({
 
   const doPost = async (authorization: PostingAuthorizationPayload) => {
     setShortages([])
-    let saved: SalesDocument | undefined
     try {
-      saved = isDirty || !document ? await persist(form.getValues() as SalesFormValues) : document
-      const posted = await post.mutateAsync({ id: saved.id, authorization })
+      // Parsed values (Zod output): raw form values keep the decimal comma ("1,50").
+      const id = isDirty || !draftId ? (await persist(salesFormSchema.parse(form.getValues()))).id : draftId
+      const posted = await post.mutateAsync({ id, authorization })
       setAuthRequest(null)
       toast.success(`${posted.type_label} ${posted.number} confirmada`, {
         description: isQuote
@@ -305,7 +309,6 @@ function SalesEditor({
       })
       navigate(`/ventas/documentos/${posted.id}`, { replace: true })
     } catch (error) {
-      if (saved && !document) navigate(`/ventas/documentos/${saved.id}`, { replace: true })
       if (!applyServerErrors(error, authorization))
         toast.error(error instanceof ApiError ? error.message : 'No se pudo confirmar.')
     }
@@ -315,11 +318,11 @@ function SalesEditor({
 
   const doDelete = async () => {
     if (
-      !document ||
+      !draftId ||
       !window.confirm('¿Eliminar este borrador? La eliminación queda registrada en la auditoría.')
     )
       return
-    await remove.mutateAsync(document.id)
+    await remove.mutateAsync(draftId)
     toast.success('Borrador eliminado')
     navigate('/ventas/documentos', { replace: true })
   }
@@ -342,14 +345,14 @@ function SalesEditor({
             </span>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                {document ? `Borrador de ${meta.label.toLowerCase()}` : meta.newTitle}
+                {draftId ? `Borrador de ${meta.label.toLowerCase()}` : meta.newTitle}
               </h1>
               <p className="text-sm text-muted-foreground">{meta.description}</p>
             </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {document && (
+          {draftId && (
             <Button
               type="button"
               variant="ghost"
@@ -1214,7 +1217,12 @@ function SalesView({ document: doc }: { document: SalesDocument }) {
               {hasMargin && isSale && doc.margin_total && (
                 <>
                   <dt className="text-xs text-muted-foreground">Margen</dt>
-                  <dd className="num text-right text-xs font-medium text-success">
+                  <dd
+                    className={cn(
+                      'num text-right text-xs font-medium',
+                      Number(doc.margin_total) < 0 ? 'text-destructive' : 'text-success',
+                    )}
+                  >
                     {formatCurrency(Number(doc.margin_total))}
                     {Number(doc.net_amount) > 0 &&
                       ` · ${((Number(doc.margin_total) / Number(doc.net_amount)) * 100).toFixed(1).replace('.', ',')} %`}

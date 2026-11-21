@@ -329,7 +329,7 @@ function StatementTab({ customer, onCollect }: { customer: Customer; onCollect?:
   return (
     <div className="flex flex-col gap-4">
       <Card className="gap-3">
-        <CardHeader className="flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="text-base">Antigüedad de la deuda</CardTitle>
           {onCollect && Number(customer.receivables?.balance ?? 0) > 0 && (
             <CardAction>
