@@ -18,7 +18,7 @@ docker/    Dockerfiles y configs (php-fpm, nginx, python, node, postgres)
 docs/      architecture.md y ADRs (docs/adr/)
 ```
 
-- El navegador **solo** habla con Laravel. Laravel llama a la IA con `App\Services\Ai\AiClient`
+- El navegador **solo** habla con Laravel. Laravel llama a la IA con `App\Infrastructure\Ai\AiClient`
   (header `X-Service-Token`). Nunca expongas `apps/ai` al frontend.
 - Auth: Sanctum SPA con cookies (sesión + XSRF). Nada de tokens en localStorage.
 - Ver `docs/architecture.md` y `docs/adr/0001-arquitectura-monorepo.md`.
@@ -78,26 +78,34 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 1. **Dinero en `NUMERIC(14,2)`** (`$table->decimal('amount', 14, 2)`, cast `decimal:2`). Nunca float.
 2. **Cantidades de inventario en `NUMERIC(14,4)`** (unidades fraccionables: kg, litros, metros).
-   Costos unitarios también con 4 decimales si hace falta precisión de costeo.
+   **Excepción de costeo (ADR 0004):** `unit_cost`/`avg_cost` en `NUMERIC(14,4)` y valores de inventario
+   (`total_cost`, `value_after`, `total_value`) en `NUMERIC(16,4)` como precisión interna; la UI redondea a 2.
+   Aritmética decimal siempre con `BcMath\Number` (+ `App\Domain\Shared\Support\Decimal`), nunca floats.
 3. **Inventario como ledger de movimientos**: el stock es la suma de `stock_movements` (entradas
    positivas, salidas negativas). Nunca se edita un saldo "a mano"; los saldos materializados son caché
    derivada del ledger y se recalculan desde él.
 4. **Documentos que se anulan, nunca se borran**: ventas, compras, cobros, pagos y movimientos tienen
    estado (`draft`, `posted`, `voided`) y una anulación genera el movimiento inverso. Prohibido
    `DELETE` sobre documentos contabilizados (sin soft delete como sustituto de anulación).
-5. **`company_id` en toda tabla de negocio** + trait `App\Models\Concerns\BelongsToCompany` (global
+5. **`company_id` en toda tabla de negocio** + trait `App\Domain\Shared\Tenancy\BelongsToCompany` (global
    scope + autollenado). Desactivar el scope solo de forma explícita y justificada. Excepción: `users`
    se aísla por membresía (`company_user`) con `CompanyMemberScope`.
 6. **Transacciones** (`DB::transaction`) en toda operación que toque stock o saldos, con bloqueo
    (`lockForUpdate`) de las filas de saldo afectadas para evitar condiciones de carrera.
 7. Fechas con zona horaria (`timestampTz`); la zona de negocio es la de la empresa (`America/La_Paz`).
-8. Auditoría: acciones sensibles registran `audit_logs` (inmutable) vía `App\Services\AuditLogger`.
+8. **Inventario (ADR 0004):** solo `PostInventoryDocument` / `VoidInventoryDocument` escriben el ledger
+   (vía `StockLedger`, que bloquea saldos en orden (warehouse, product)). Costo promedio por producto y
+   almacén; anulación al costo original; invariante `value >= 0` y `avg_cost >= 0` (si no, 422
+   `void_cost_inconsistency`); stock negativo configurable por empresa (`insufficient_stock`);
+   numeración sin huecos con `DocumentNumberer` dentro de la transacción; posting idempotente;
+   `document_date` ≤ hoy y ≥ hoy − `companies.document_backdate_days`. `php artisan inventory:verify [--repair]`.
+9. Auditoría: acciones sensibles registran `audit_logs` (inmutable) vía `App\Domain\Shared\Services\AuditLogger`.
 
 ## Comandos frecuentes
 
 ```bash
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
-make fresh     # migrate:fresh --seed (empresa demo + admin@ccp.test / password)
+make fresh     # migrate:fresh --seed (empresa demo, ~90 días de inventario, admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
