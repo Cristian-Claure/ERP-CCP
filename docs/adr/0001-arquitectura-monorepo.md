@@ -25,7 +25,7 @@ solo repositorio con un único `docker-compose.yml`, `Makefile` y pipeline de CI
 ### 2. Laravel como único gateway
 
 El navegador solo habla con Laravel (`/api/v1`). Laravel concentra autenticación, autorización
-(spatie/permission + policies), multiempresa (`BelongsToCompany`), validación, auditoría y
+(spatie/permission en modo teams por empresa —ver ADR 0002— + policies), multiempresa (`BelongsToCompany`), validación, auditoría y
 transacciones de base de datos.
 
 - Las reglas de negocio críticas (stock como ledger, documentos anulables, dinero en NUMERIC)

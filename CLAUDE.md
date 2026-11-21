@@ -35,6 +35,10 @@ docs/      architecture.md y ADRs (docs/adr/)
 - Capas: `Http/Controllers/Api/V1` (delgados) → `Http/Requests` (validación) → `Actions` (un caso de
   uso) / `Services` (integraciones y lógica reutilizable) → `Models`. Respuestas con `Http/Resources`.
   Autorización con `Policies` + permisos spatie (`<modulo>.<accion>`, p. ej. `inventory.manage`).
+- **spatie en modo teams (team = `company_id`)**: roles y permisos se resuelven por la empresa activa
+  (`users.company_id`). Las rutas autenticadas usan `['auth:sanctum', 'company']`. En jobs, comandos,
+  seeders y tests hay que llamar `setPermissionsTeamId($companyId)` antes de asignar o consultar roles.
+  Membresías en `company_user` (`User::companies()`, `joinCompany()`, `belongsToCompany()`). Ver ADR 0002.
 - Errores: siempre el envelope uniforme de `App\Exceptions\ApiExceptionRenderer`:
   `{"error": {"status", "code", "message", "details?"}}`.
 - Toda ruta de negocio va dentro del grupo `auth:sanctum` de `routes/api.php`, versionada en `v1`.
@@ -72,7 +76,8 @@ docs/      architecture.md y ADRs (docs/adr/)
    estado (`draft`, `posted`, `voided`) y una anulación genera el movimiento inverso. Prohibido
    `DELETE` sobre documentos contabilizados (sin soft delete como sustituto de anulación).
 5. **`company_id` en toda tabla de negocio** + trait `App\Models\Concerns\BelongsToCompany` (global
-   scope + autollenado). Desactivar el scope solo de forma explícita y justificada.
+   scope + autollenado). Desactivar el scope solo de forma explícita y justificada. Excepción: `users`
+   se aísla por membresía (`company_user`) con `CompanyMemberScope`.
 6. **Transacciones** (`DB::transaction`) en toda operación que toque stock o saldos, con bloqueo
    (`lockForUpdate`) de las filas de saldo afectadas para evitar condiciones de carrera.
 7. Fechas con zona horaria (`timestampTz`); la zona de negocio es la de la empresa (`America/La_Paz`).

@@ -40,11 +40,15 @@
 
 ## Multiempresa
 
-- `companies` → `users.company_id`. Cada modelo de negocio usa `BelongsToCompany`:
+- Membresía N:M en `company_user`; `users.company_id` es la **empresa activa** (siempre una membresía).
+- Roles y permisos con **spatie teams** (`company_id` como team): las asignaciones son por empresa y
+  el middleware `company` llama `setPermissionsTeamId()` con la empresa activa. Ver
+  [ADR 0002](adr/0002-roles-por-empresa-spatie-teams.md).
+- Los usuarios se filtran por membresía (`CompanyMemberScope`). Cada modelo de negocio usa `BelongsToCompany`:
   - un global scope `CompanyScope` filtra por `CurrentCompany::id()` (empresa del usuario
     autenticado, o una fijada a mano en jobs y consola);
   - autollenado de `company_id` al crear.
-- Roles y permisos (spatie) son globales en esta fase: un usuario pertenece a una sola empresa.
+- En la beta cada usuario tiene una sola empresa (sin selector); el esquema ya soporta varias.
 
 ## Contrato de errores de la API
 
