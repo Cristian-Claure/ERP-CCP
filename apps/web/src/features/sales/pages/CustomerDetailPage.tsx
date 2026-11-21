@@ -8,7 +8,7 @@ import { LeafletMap } from '@/components/map/LeafletMap'
 import { pinIcon } from '@/components/map/icons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DocumentStatusBadge } from '@/features/inventory/components/DocumentStatusBadge'
@@ -332,9 +332,11 @@ function StatementTab({ customer, onCollect }: { customer: Customer; onCollect?:
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base">Antigüedad de la deuda</CardTitle>
           {onCollect && Number(customer.receivables?.balance ?? 0) > 0 && (
-            <Button size="sm" variant="outline" onClick={onCollect}>
-              <HandCoins /> Registrar cobro
-            </Button>
+            <CardAction>
+              <Button size="sm" variant="outline" onClick={onCollect}>
+                <HandCoins /> Registrar cobro
+              </Button>
+            </CardAction>
           )}
         </CardHeader>
         <CardContent>{data ? <AgingBar aging={data.aging} /> : <div className="h-10" />}</CardContent>

@@ -733,10 +733,9 @@ function SalesEditor({
                   {...form.register('global_discount')}
                 />
               </dd>
-              <dt className="border-t pt-2 font-medium">Total</dt>
-              <dd className="num border-t pt-2 text-right text-xl font-semibold">
-                {formatCurrency(totals.total)}
-              </dd>
+              <div className="col-span-2 mt-1 border-t" aria-hidden />
+              <dt className="font-medium">Total</dt>
+              <dd className="num text-right text-xl font-semibold">{formatCurrency(totals.total)}</dd>
               {breakDownVat ? (
                 <>
                   <dt className="text-xs text-muted-foreground">Neto (sin IVA)</dt>
@@ -1197,10 +1196,9 @@ function SalesView({ document: doc }: { document: SalesDocument }) {
                   </dd>
                 </>
               )}
-              <dt className="border-t pt-2 font-medium">Total</dt>
-              <dd className="num border-t pt-2 text-right text-xl font-semibold">
-                {formatCurrency(Number(doc.total))}
-              </dd>
+              <div className="col-span-2 mt-1 border-t" aria-hidden />
+              <dt className="font-medium">Total</dt>
+              <dd className="num text-right text-xl font-semibold">{formatCurrency(Number(doc.total))}</dd>
               {Number(doc.iva_amount) > 0 && (
                 <>
                   <dt className="text-xs text-muted-foreground">Neto (sin IVA)</dt>

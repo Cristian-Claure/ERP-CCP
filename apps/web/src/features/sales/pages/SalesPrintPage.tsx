@@ -197,22 +197,12 @@ export function SalesPrintPage() {
                 <dd className="num text-right">−{formatCurrency(Number(doc.global_discount))}</dd>
               </>
             )}
-            <dt
-              className={cn(
-                'mt-1 border-t-2 pt-1.5 text-sm font-bold',
-                mono ? 'border-zinc-900' : 'border-[#6366f1]',
-              )}
-            >
-              Total Bs
-            </dt>
-            <dd
-              className={cn(
-                'num mt-1 border-t-2 pt-1.5 text-right text-sm font-bold',
-                mono ? 'border-zinc-900' : 'border-[#6366f1]',
-              )}
-            >
-              {formatCurrency(Number(doc.total))}
-            </dd>
+            <div
+              aria-hidden
+              className={cn('col-span-2 mt-1 border-t-2', mono ? 'border-zinc-900' : 'border-[#6366f1]')}
+            />
+            <dt className="text-sm font-bold">Total Bs</dt>
+            <dd className="num text-right text-sm font-bold">{formatCurrency(Number(doc.total))}</dd>
             {showVat && (
               <>
                 <dt className="text-[10.5px] text-zinc-500">Importe neto</dt>
