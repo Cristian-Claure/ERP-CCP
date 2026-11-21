@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { navigation } from '@/components/layout/navigation'
 import { FullScreenLoader } from '@/components/feedback/FullScreenLoader'
 import { PageSkeleton } from '@/components/feedback/PageSkeleton'
+import { RouteErrorPage } from '@/features/common/pages/RouteErrorPage'
 
 import { GuestRoute, ProtectedRoute } from './guards'
 
@@ -31,10 +32,12 @@ const placeholderRoutes = navigation
 export const router = createBrowserRouter([
   {
     element: <GuestRoute />,
+    errorElement: <RouteErrorPage />,
     children: [{ path: '/login', element: withSuspense(<LoginPage />, <FullScreenLoader />) }],
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <AppShell />,

@@ -29,3 +29,6 @@ class ResizeObserverStub {
   disconnect() {}
 }
 window.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver
+
+// jsdom lacks scrollIntoView (used by cmdk to keep the active item visible).
+Element.prototype.scrollIntoView ??= () => {}

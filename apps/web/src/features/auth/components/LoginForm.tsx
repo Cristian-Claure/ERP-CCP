@@ -91,7 +91,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="Tu contraseña"
               aria-invalid={!!errors.password}
               {...form.register('password')}
             />

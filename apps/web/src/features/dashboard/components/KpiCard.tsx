@@ -39,9 +39,11 @@ export function KpiCard({ kpi, currency }: KpiCardProps) {
   return (
     <Card className="group relative gap-0 overflow-hidden p-5 transition-colors hover:border-brand/30">
       <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-[13px] font-medium text-muted-foreground">{kpi.label}</p>
-          <p className="num text-[26px] leading-tight font-semibold tracking-tight">{value}</p>
+          <p className="num truncate text-[22px] leading-tight font-semibold tracking-tight 2xl:text-[26px]">
+            {value}
+          </p>
         </div>
         <span
           className="flex size-10 shrink-0 items-center justify-center rounded-xl border"
