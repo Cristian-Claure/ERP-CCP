@@ -37,9 +37,14 @@ class RolesAndPermissionsSeeder extends Seeder
         'almacenero' => ['dashboard.view', 'inventory.view', 'inventory.manage', 'purchases.view'],
     ];
 
+    /**
+     * Roles are created as GLOBAL templates (company_id = NULL) usable by every
+     * company; assignments (model_has_roles) are always per company (team).
+     */
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        setPermissionsTeamId(null);
 
         foreach (self::PERMISSIONS as $name) {
             Permission::findOrCreate($name, 'web');

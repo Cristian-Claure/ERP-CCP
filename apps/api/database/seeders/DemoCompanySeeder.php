@@ -45,7 +45,13 @@ class DemoCompanySeeder extends Seeder
                 ],
             );
 
-            $user->syncRoles([$data['role']]);
+            $user->joinCompany($company->id);
+
+            // Role assignment is scoped to the company (spatie team).
+            setPermissionsTeamId($company->id);
+            $user->unsetRelation('roles')->syncRoles([$data['role']]);
         }
+
+        setPermissionsTeamId(null);
     }
 }
