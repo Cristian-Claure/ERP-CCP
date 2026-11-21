@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Internal FastAPI service (apps/ai). Reachable only from the Docker network.
+    'ai' => [
+        'url' => env('AI_SERVICE_URL', 'http://ai:8000'),
+        'token' => env('AI_SERVICE_TOKEN'),
+        'timeout' => (int) env('AI_SERVICE_TIMEOUT', 5),
+    ],
+
 ];
