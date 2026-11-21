@@ -10,7 +10,8 @@ RUN apk add --no-cache fcgi git unzip \
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-ccp.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-ccp.conf
 COPY docker/php/entrypoint.sh /usr/local/bin/ccp-entrypoint
-RUN chmod +x /usr/local/bin/ccp-entrypoint
+COPY docker/php/dev-reload.sh /usr/local/bin/ccp-dev-reload
+RUN chmod +x /usr/local/bin/ccp-entrypoint /usr/local/bin/ccp-dev-reload
 
 WORKDIR /var/www/html
 ENTRYPOINT ["ccp-entrypoint"]
