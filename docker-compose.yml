@@ -11,6 +11,8 @@ x-api-base: &api-base
   env_file: .env
   volumes:
     - ./apps/api:/var/www/html
+    # Single source of truth: the root .env is also visible to Laravel's dotenv.
+    - ./.env:/var/www/html/.env:ro
   restart: unless-stopped
 
 services:
