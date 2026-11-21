@@ -1,0 +1,22 @@
+# Development-only overrides (auto-loaded by `docker compose`).
+# Never use this file in production.
+services:
+  postgres:
+    ports:
+      - "${DB_FORWARD_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+
+  ai:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/app"]
+    volumes:
+      - ./apps/ai/app:/app/app
+      - ./apps/ai/tests:/app/tests
+    ports:
+      - "${AI_FORWARD_PORT:-8001}:8000"
+
+  mailpit:
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
