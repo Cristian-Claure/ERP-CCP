@@ -1,15 +1,20 @@
-import { CalendarDays, RefreshCw, TriangleAlert } from 'lucide-react'
+import { CalendarDays, RefreshCw } from 'lucide-react'
 
-import { EmptyState } from '@/components/feedback/EmptyState'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/hooks'
 import { useInventoryDashboard } from '@/features/inventory/hooks'
+import { useSalesDashboard } from '@/features/sales/hooks'
+import type { SalesDashboard } from '@/features/sales/types'
 
 import { InventoryValuationCard, LowStockCard } from '../components/InventoryWidgets'
 import { KpiCard, KpiCardSkeleton } from '../components/KpiCard'
-import { RecentOperationsTable, RecentOperationsTableSkeleton } from '../components/RecentOperationsTable'
-import { SalesAreaChart, SalesAreaChartSkeleton } from '../components/SalesAreaChart'
+import {
+  DailySalesChart,
+  TopCustomersCard,
+  TopProductsCard,
+  WidgetSkeleton,
+} from '../components/SalesWidgets'
 import { useDashboardSummary } from '../hooks'
 import type { Kpi } from '../types'
 
@@ -26,25 +31,90 @@ const todayLabel = new Intl.DateTimeFormat('es-BO', {
   month: 'long',
 }).format(new Date())
 
+const prevMonthName = (() => {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - 1)
+  return new Intl.DateTimeFormat('es-BO', { month: 'long' }).format(d)
+})()
+
+/** Weekly totals of the last 8 weeks (sparkline of the monthly sales KPI). */
+function weeklyTrend(daily: SalesDashboard['daily']): number[] {
+  const last = daily.slice(-56)
+  return Array.from({ length: 8 }, (_, w) =>
+    last.slice(w * 7, w * 7 + 7).reduce((s, d) => s + Number(d.total), 0),
+  )
+}
+
 export function DashboardPage() {
   const { user, can } = useAuth()
-  const { data, isPending, isError, refetch, isFetching } = useDashboardSummary()
   const canInventory = can('inventory.view')
+  const canSales = can('sales.view')
+  const sales = useSalesDashboard(canSales)
   const inventory = useInventoryDashboard(canInventory)
+  // Only the "pending orders" KPI is still a demo (Purchases arrives in Phase 3).
+  const demo = useDashboardSummary()
 
-  // Low-stock KPI comes from the real inventory API; the rest stay demo until their modules exist.
-  const kpis: Kpi[] | undefined = data?.kpis.map((kpi) =>
-    kpi.key === 'low_stock' && inventory.data
-      ? {
-          ...kpi,
-          value: inventory.data.low_stock.count,
+  const kpis: (Kpi | null)[] = []
+  if (canSales) {
+    const s = sales.data
+    if (s) {
+      const current = Number(s.month.current.total)
+      const previous = Number(s.month.previous.total)
+      kpis.push({
+        key: 'monthly_sales',
+        label: 'Ventas del mes',
+        value: current,
+        format: 'currency',
+        delta: previous > 0 ? ((current - previous) / previous) * 100 : null,
+        higherIsBetter: true,
+        hint: `${s.month.current.count} ventas · vs. mismo período de ${prevMonthName}`,
+        trend: weeklyTrend(s.daily),
+        source: 'live',
+      })
+      if (s.receivables) {
+        kpis.push({
+          key: 'receivables',
+          label: 'Cuentas por cobrar',
+          value: Number(s.receivables.total),
+          format: 'currency',
           delta: null,
-          trend: undefined,
-          hint: inventory.data.low_stock.count === 1 ? 'producto a reponer' : 'productos a reponer',
+          higherIsBetter: false,
+          hint: `${s.receivables.customers_with_debt} clientes · vencido ${new Intl.NumberFormat('es-BO', {
+            style: 'currency',
+            currency: 'BOB',
+            maximumFractionDigits: 0,
+          }).format(Number(s.receivables.overdue))}`,
           source: 'live',
-        }
-      : kpi,
-  )
+        })
+      }
+    } else {
+      kpis.push(null, null)
+    }
+  }
+  if (canInventory) {
+    kpis.push(
+      inventory.data
+        ? {
+            key: 'low_stock',
+            label: 'Bajo stock mínimo',
+            value: inventory.data.low_stock.count,
+            format: 'integer',
+            delta: null,
+            higherIsBetter: false,
+            hint: inventory.data.low_stock.count === 1 ? 'producto a reponer' : 'productos a reponer',
+            source: 'live',
+          }
+        : null,
+    )
+  }
+  const pending = demo.data?.kpis.find((k) => k.key === 'pending_orders')
+  kpis.push(pending ?? null)
+
+  const refresh = () => {
+    void sales.refetch()
+    void inventory.refetch()
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,61 +134,47 @@ export function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                void refetch()
-                void inventory.refetch()
-              }}
-              disabled={isFetching}
+              onClick={refresh}
+              disabled={sales.isFetching || inventory.isFetching}
             >
-              <RefreshCw className={isFetching ? 'animate-spin' : undefined} />
+              <RefreshCw className={sales.isFetching || inventory.isFetching ? 'animate-spin' : undefined} />
               Actualizar
             </Button>
           </>
         }
       />
 
-      {isError ? (
-        <EmptyState
-          icon={TriangleAlert}
-          title="No pudimos cargar el resumen"
-          description="Revisa tu conexión e inténtalo de nuevo."
-          action={
-            <Button size="sm" onClick={() => void refetch()}>
-              Reintentar
-            </Button>
-          }
-        />
-      ) : (
-        <>
-          <section aria-label="Indicadores clave" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {isPending
-              ? Array.from({ length: 4 }, (_, i) => <KpiCardSkeleton key={i} />)
-              : kpis?.map((kpi) => <KpiCard key={kpi.key} kpi={kpi} currency={data.currency} />)}
-          </section>
+      <section aria-label="Indicadores clave" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map((kpi, i) =>
+          kpi ? <KpiCard key={kpi.key} kpi={kpi} currency="BOB" /> : <KpiCardSkeleton key={i} />,
+        )}
+      </section>
 
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className={canInventory ? 'xl:col-span-2' : 'xl:col-span-3'}>
-              {isPending ? (
-                <SalesAreaChartSkeleton />
-              ) : (
-                <SalesAreaChart data={data.sales} currency={data.currency} />
-              )}
-            </div>
-            {canInventory && <InventoryValuationCard data={inventory.data?.valuation} />}
+      {canSales && (
+        <div className="grid gap-4 xl:grid-cols-3">
+          <div className={canInventory ? 'xl:col-span-2' : 'xl:col-span-3'}>
+            {sales.data ? <DailySalesChart daily={sales.data.daily} /> : <WidgetSkeleton />}
           </div>
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className={canInventory ? 'xl:col-span-2' : 'xl:col-span-3'}>
-              {isPending ? (
-                <RecentOperationsTableSkeleton />
-              ) : (
-                <RecentOperationsTable operations={data.recentOperations} currency={data.currency} />
-              )}
-            </div>
-            {canInventory && <LowStockCard data={inventory.data?.low_stock} />}
-          </div>
-        </>
+          {canInventory && <InventoryValuationCard data={inventory.data?.valuation} />}
+        </div>
       )}
+
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        {canSales &&
+          (sales.data ? (
+            <>
+              <TopCustomersCard items={sales.data.top_customers} />
+              <TopProductsCard data={sales.data.top_products} />
+            </>
+          ) : (
+            <>
+              <WidgetSkeleton height={220} />
+              <WidgetSkeleton height={220} />
+            </>
+          ))}
+        {!canSales && canInventory && <InventoryValuationCard data={inventory.data?.valuation} />}
+        {canInventory && <LowStockCard data={inventory.data?.low_stock} />}
+      </div>
     </div>
   )
 }
