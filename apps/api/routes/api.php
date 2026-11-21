@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Shared\AuthController;
+use App\Http\Controllers\Api\V1\Shared\HealthController;
 use Illuminate\Support\Facades\Route;
 
 /*

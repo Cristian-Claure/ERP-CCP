@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\AuditLog;
-use App\Models\Company;
-use App\Models\Scopes\CompanyMemberScope;
-use App\Models\User;
+use App\Domain\Shared\Models\AuditLog;
+use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Models\User;
+use App\Domain\Shared\Tenancy\CompanyMemberScope;
 
 it('scopes users to members of the active company', function () {
     [$companyA, $companyB] = Company::factory()->count(2)->create();

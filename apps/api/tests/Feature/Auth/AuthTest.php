@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\AuditLog;
-use App\Models\Company;
-use App\Models\User;
+use App\Domain\Shared\Models\AuditLog;
+use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoCompanySeeder;
 use Illuminate\Support\Facades\RateLimiter;

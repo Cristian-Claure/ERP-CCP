@@ -32,13 +32,23 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 ### Backend (apps/api)
 
-- Capas: `Http/Controllers/Api/V1` (delgados) → `Http/Requests` (validación) → `Actions` (un caso de
-  uso) / `Services` (integraciones y lógica reutilizable) → `Models`. Respuestas con `Http/Resources`.
-  Autorización con `Policies` + permisos spatie (`<modulo>.<accion>`, p. ej. `inventory.manage`).
+- **Organización por dominios** (ADR 0003):
+  - `app/Domain/<Modulo>/{Models,Actions,Policies,Data,Enums,Events,Exceptions,Services}`: reglas de
+    negocio. `app/Domain/Shared` es el núcleo (Company, User, AuditLog, Tenancy, Auth).
+  - `app/Http/{Controllers/Api/V1,Requests,Resources}/<Modulo>/`: solo transporte. Controladores
+    delgados: validan con un Request, llaman a una Action con un DTO y devuelven un Resource.
+  - `app/Infrastructure/`: integraciones técnicas (AiClient, HealthService).
+  - `make:model` genera en `app/Models`: mueve la clase a su dominio. En el modelo, usa
+    `#[UseFactory]` y `#[UsePolicy]`; en la factory, `protected $model`. Todo modelo que aparezca en
+    columnas polimórficas (auditable) va en `App\Domain\Shared\MorphMap`.
+- Autorización con `Policies` + permisos spatie (`<modulo>.<accion>`, p. ej. `movements.post`).
 - **spatie en modo teams (team = `company_id`)**: roles y permisos se resuelven por la empresa activa
-  (`users.company_id`). Las rutas autenticadas usan `['auth:sanctum', 'company']`. En jobs, comandos,
-  seeders y tests hay que llamar `setPermissionsTeamId($companyId)` antes de asignar o consultar roles.
-  Membresías en `company_user` (`User::companies()`, `joinCompany()`, `belongsToCompany()`). Ver ADR 0002.
+  (`users.company_id`). Las rutas autenticadas usan `['auth:sanctum', 'company']`. Membresías en
+  `company_user` (`User::companies()`, `joinCompany()`, `belongsToCompany()`). Ver ADR 0002.
+- **Fuera de HTTP (jobs, comandos, seeders, tests) usa siempre `RunsInCompanyContext`**
+  (`$this->inCompany($company, fn …)`, `$this->forEachCompany(fn …)`) o `CompanyContext::run()`.
+  Fijan y restauran el scope de empresa y el team de spatie. No llames `setPermissionsTeamId()` a mano
+  fuera de la capa HTTP.
 - Errores: siempre el envelope uniforme de `App\Exceptions\ApiExceptionRenderer`:
   `{"error": {"status", "code", "message", "details?"}}`.
 - Toda ruta de negocio va dentro del grupo `auth:sanctum` de `routes/api.php`, versionada en `v1`.

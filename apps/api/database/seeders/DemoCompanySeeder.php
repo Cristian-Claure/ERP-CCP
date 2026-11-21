@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Models\Company;
-use App\Models\User;
+use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Models\User;
+use App\Domain\Shared\Tenancy\RunsInCompanyContext;
 use Illuminate\Database\Seeder;
 
 class DemoCompanySeeder extends Seeder
 {
+    use RunsInCompanyContext;
+
     public const ADMIN_EMAIL = 'admin@ccp.test';
 
     public function run(): void
@@ -20,8 +23,8 @@ class DemoCompanySeeder extends Seeder
                 'currency' => 'BOB',
                 'timezone' => 'America/La_Paz',
                 'email' => 'contacto@comercialdemo.test',
-                'phone' => '+591 2 2000000',
-                'address' => 'Av. Arce 1234, La Paz, Bolivia',
+                'phone' => '+591 3 3000000',
+                'address' => 'Av. San Martín 1500, Equipetrol, Santa Cruz de la Sierra',
                 'is_active' => true,
             ],
         );
@@ -48,10 +51,7 @@ class DemoCompanySeeder extends Seeder
             $user->joinCompany($company->id);
 
             // Role assignment is scoped to the company (spatie team).
-            setPermissionsTeamId($company->id);
-            $user->unsetRelation('roles')->syncRoles([$data['role']]);
+            $this->inCompany($company, fn () => $user->unsetRelation('roles')->syncRoles([$data['role']]));
         }
-
-        setPermissionsTeamId(null);
     }
 }
