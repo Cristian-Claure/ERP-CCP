@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
-use App\Services\Ai\AiClient;
-use App\Support\Tenancy\CurrentCompany;
+use App\Domain\Shared\MorphMap;
+use App\Domain\Shared\Tenancy\CurrentCompany;
+use App\Infrastructure\Ai\AiClient;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::shouldBeStrict(! $this->app->isProduction());
+
+        // Stable aliases stored in polymorphic columns (audit_logs, model_has_roles...),
+        // so moving a class between namespaces never breaks existing rows.
+        Relation::enforceMorphMap(MorphMap::MAP);
         JsonResource::withoutWrapping();
 
         // 5 attempts per minute per email+IP, plus 20 per minute per IP.

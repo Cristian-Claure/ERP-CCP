@@ -79,10 +79,10 @@ Convenciones y reglas de base de datos en [`CLAUDE.md`](CLAUDE.md).
 
 ## Roadmap
 
-- [x] **Fase 0 — Cimientos:** monorepo, Docker, auth Sanctum, multiempresa, health, servicio IA, AppShell y dashboard demo
-- [ ] **Fase 1 — Inventario:** productos, almacenes, ledger de movimientos, kardex y costo promedio
-- [ ] **Fase 2 — Compras:** proveedores, órdenes, recepciones con entrada a stock
-- [ ] **Fase 3 — Ventas:** clientes, cotizaciones, ventas con salida de stock y anulaciones
+- [x] **Fase 0 — Cimientos:** monorepo, Docker, auth Sanctum, multiempresa (roles por empresa), health, servicio IA, AppShell y dashboard
+- [x] **Fase 1 — Inventario:** productos, almacenes, ledger de movimientos, costo promedio, kardex con CSV, ajustes por conteo, anulaciones, numeración sin huecos, `inventory:verify` y DataTable reutilizable
+- [ ] **Fase 2 — Ventas** *(propuesta: [docs/roadmap/fase-2-ventas.md](docs/roadmap/fase-2-ventas.md))*: clientes, cotizaciones, ventas con salida de stock atómica, cobros y cuentas por cobrar
+- [ ] **Fase 3 — Compras:** proveedores, órdenes, recepciones con entrada a stock
 - [ ] **Fase 4 — Finanzas:** caja y bancos, cuentas por cobrar y por pagar
 - [ ] **Fase 5 — Inteligencia:** pronósticos de demanda reales y asistente IA sobre los datos de la empresa
 - [ ] **Fase 6 — Sistema:** gestión de usuarios y roles, configuración de empresa, auditoría visible

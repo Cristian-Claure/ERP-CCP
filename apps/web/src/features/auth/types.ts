@@ -5,6 +5,8 @@ export interface Company {
   tax_id: string
   currency: string
   timezone: string
+  allow_negative_stock: boolean
+  document_backdate_days: number
 }
 
 export interface AuthUser {

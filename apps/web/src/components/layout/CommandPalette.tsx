@@ -58,16 +58,18 @@ export function CommandPalette() {
           <CommandEmpty>Sin resultados.</CommandEmpty>
           {visibleNavigation(can).map((section) => (
             <CommandGroup key={section.title} heading={section.title}>
-              {section.items.map((item) => (
-                <CommandItem
-                  key={item.href}
-                  value={`${item.title} ${section.title} ${(item.keywords ?? []).join(' ')}`}
-                  onSelect={() => run(() => navigate(item.href))}
-                >
-                  <item.icon />
-                  {item.title}
-                </CommandItem>
-              ))}
+              {section.items.flatMap((item) =>
+                (item.children?.length ? item.children : [item]).map((entry) => (
+                  <CommandItem
+                    key={entry.href}
+                    value={`${item.title} ${entry.title} ${section.title} ${[...(item.keywords ?? []), ...(entry.keywords ?? [])].join(' ')}`}
+                    onSelect={() => run(() => navigate(entry.href))}
+                  >
+                    <entry.icon />
+                    {entry === item ? item.title : `${item.title} · ${entry.title}`}
+                  </CommandItem>
+                )),
+              )}
             </CommandGroup>
           ))}
           <CommandSeparator />

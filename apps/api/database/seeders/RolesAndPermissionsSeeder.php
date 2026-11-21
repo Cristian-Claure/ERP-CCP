@@ -14,7 +14,8 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public const PERMISSIONS = [
         'dashboard.view',
-        'inventory.view', 'inventory.manage',
+        // Inventory: per-action permissions (Phase 1).
+        'inventory.view', 'products.manage', 'movements.create', 'movements.post', 'movements.void',
         'sales.view', 'sales.manage',
         'purchases.view', 'purchases.manage',
         'finance.view', 'finance.manage',
@@ -27,14 +28,15 @@ class RolesAndPermissionsSeeder extends Seeder
         'admin' => ['*'],
         'gerente' => [
             'dashboard.view',
-            'inventory.view', 'inventory.manage',
+            'inventory.view', 'products.manage', 'movements.create', 'movements.post', 'movements.void',
             'sales.view', 'sales.manage',
             'purchases.view', 'purchases.manage',
             'finance.view', 'finance.manage',
             'ai.use', 'forecasts.view',
         ],
         'vendedor' => ['dashboard.view', 'inventory.view', 'sales.view', 'sales.manage', 'ai.use'],
-        'almacenero' => ['dashboard.view', 'inventory.view', 'inventory.manage', 'purchases.view'],
+        // Registers and posts stock documents, but cannot void them nor edit the catalog.
+        'almacenero' => ['dashboard.view', 'inventory.view', 'movements.create', 'movements.post', 'purchases.view'],
     ];
 
     /**

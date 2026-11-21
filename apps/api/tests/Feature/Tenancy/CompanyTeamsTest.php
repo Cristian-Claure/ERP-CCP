@@ -1,7 +1,8 @@
 <?php
 
-use App\Models\Company;
-use App\Models\User;
+use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Models\User;
+use App\Domain\Shared\Tenancy\CompanyContext;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
 
@@ -15,11 +16,8 @@ beforeEach(function () {
     $this->user = User::factory()->for($this->companyA)->create();
     $this->user->joinCompany($this->companyB->id);
 
-    setPermissionsTeamId($this->companyA->id);
-    $this->user->assignRole('admin');
-    setPermissionsTeamId($this->companyB->id);
-    $this->user->unsetRelation('roles')->assignRole('vendedor');
-    setPermissionsTeamId(null);
+    CompanyContext::run($this->companyA->id, fn () => $this->user->assignRole('admin'));
+    CompanyContext::run($this->companyB->id, fn () => $this->user->unsetRelation('roles')->assignRole('vendedor'));
 });
 
 it('creates roles as global templates shared by every company', function () {

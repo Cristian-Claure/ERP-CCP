@@ -1,14 +1,14 @@
 <?php
 
-use App\Models\AuditLog;
-use App\Models\Company;
-use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use App\Domain\Shared\Models\AuditLog;
+use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Models\User;
 use Database\Seeders\DemoCompanySeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\RateLimiter;
 
 beforeEach(function () {
-    $this->seed(DatabaseSeeder::class);
+    $this->seed([RolesAndPermissionsSeeder::class, DemoCompanySeeder::class]);
     $this->withHeaders(spaHeaders());
 });
 
@@ -25,7 +25,7 @@ it('logs in the demo admin with valid credentials', function () {
         ->assertJsonPath('roles', ['admin'])
         ->assertJsonMissingPath('password');
 
-    expect($response->json('permissions'))->toContain('users.manage', 'inventory.manage');
+    expect($response->json('permissions'))->toContain('users.manage', 'movements.void');
     $this->assertAuthenticated('web');
     expect(AuditLog::where('event', 'auth.login')->count())->toBe(1);
 });

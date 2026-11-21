@@ -7,6 +7,13 @@ if [ ! -f vendor/autoload.php ]; then
 fi
 
 mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
+# Dev bind mount: files may be created by root (docker exec) and php-fpm runs as www-data.
+chmod -R a+rwX storage bootstrap/cache 2>/dev/null || true
+
+# php-fpm in local env: background watcher that reloads it on source changes
+# (opcache does not revalidate timestamps in dev, see docker/php/php.ini).
+if [ "$1" = "php-fpm" ] && [ "${APP_ENV:-local}" = "local" ]; then
+    /usr/local/bin/ccp-dev-reload &
+fi
 
 exec "$@"

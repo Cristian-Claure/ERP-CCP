@@ -18,7 +18,7 @@ docker/    Dockerfiles y configs (php-fpm, nginx, python, node, postgres)
 docs/      architecture.md y ADRs (docs/adr/)
 ```
 
-- El navegador **solo** habla con Laravel. Laravel llama a la IA con `App\Services\Ai\AiClient`
+- El navegador **solo** habla con Laravel. Laravel llama a la IA con `App\Infrastructure\Ai\AiClient`
   (header `X-Service-Token`). Nunca expongas `apps/ai` al frontend.
 - Auth: Sanctum SPA con cookies (sesión + XSRF). Nada de tokens en localStorage.
 - Ver `docs/architecture.md` y `docs/adr/0001-arquitectura-monorepo.md`.
@@ -32,13 +32,23 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 ### Backend (apps/api)
 
-- Capas: `Http/Controllers/Api/V1` (delgados) → `Http/Requests` (validación) → `Actions` (un caso de
-  uso) / `Services` (integraciones y lógica reutilizable) → `Models`. Respuestas con `Http/Resources`.
-  Autorización con `Policies` + permisos spatie (`<modulo>.<accion>`, p. ej. `inventory.manage`).
+- **Organización por dominios** (ADR 0003):
+  - `app/Domain/<Modulo>/{Models,Actions,Policies,Data,Enums,Events,Exceptions,Services}`: reglas de
+    negocio. `app/Domain/Shared` es el núcleo (Company, User, AuditLog, Tenancy, Auth).
+  - `app/Http/{Controllers/Api/V1,Requests,Resources}/<Modulo>/`: solo transporte. Controladores
+    delgados: validan con un Request, llaman a una Action con un DTO y devuelven un Resource.
+  - `app/Infrastructure/`: integraciones técnicas (AiClient, HealthService).
+  - `make:model` genera en `app/Models`: mueve la clase a su dominio. En el modelo, usa
+    `#[UseFactory]` y `#[UsePolicy]`; en la factory, `protected $model`. Todo modelo que aparezca en
+    columnas polimórficas (auditable) va en `App\Domain\Shared\MorphMap`.
+- Autorización con `Policies` + permisos spatie (`<modulo>.<accion>`, p. ej. `movements.post`).
 - **spatie en modo teams (team = `company_id`)**: roles y permisos se resuelven por la empresa activa
-  (`users.company_id`). Las rutas autenticadas usan `['auth:sanctum', 'company']`. En jobs, comandos,
-  seeders y tests hay que llamar `setPermissionsTeamId($companyId)` antes de asignar o consultar roles.
-  Membresías en `company_user` (`User::companies()`, `joinCompany()`, `belongsToCompany()`). Ver ADR 0002.
+  (`users.company_id`). Las rutas autenticadas usan `['auth:sanctum', 'company']`. Membresías en
+  `company_user` (`User::companies()`, `joinCompany()`, `belongsToCompany()`). Ver ADR 0002.
+- **Fuera de HTTP (jobs, comandos, seeders, tests) usa siempre `RunsInCompanyContext`**
+  (`$this->inCompany($company, fn …)`, `$this->forEachCompany(fn …)`) o `CompanyContext::run()`.
+  Fijan y restauran el scope de empresa y el team de spatie. No llames `setPermissionsTeamId()` a mano
+  fuera de la capa HTTP.
 - Errores: siempre el envelope uniforme de `App\Exceptions\ApiExceptionRenderer`:
   `{"error": {"status", "code", "message", "details?"}}`.
 - Toda ruta de negocio va dentro del grupo `auth:sanctum` de `routes/api.php`, versionada en `v1`.
@@ -52,6 +62,9 @@ docs/      architecture.md y ADRs (docs/adr/)
 - Datos remotos con TanStack Query; estado de UI con Zustand. Los componentes consumen **hooks**, nunca
   axios directo; los hooks consumen una **capa de servicios** (mock o API, intercambiable).
 - Formularios: React Hook Form + Zod (mensajes en español).
+- **Listados: siempre `DataTable`** (`src/components/data-table`, ver `docs/frontend/data-table.md`): paginación,
+  orden y filtros del lado del servidor con estado en la URL (`useDataTableState`), contrato
+  `?page&per_page&sort=-campo&filter[x]=` → `{data, meta}`. Colecciones simples (catálogos) también usan `{data: [...]}`.
 - Tokens de diseño en `src/index.css`: primario `--brand` #6366F1, acento `--brand-accent` #22D3EE
   (ojo: `--accent` de shadcn es la superficie de hover, no el cian). Números y códigos con la clase `num`
   (JetBrains Mono, tabular). Modo oscuro por defecto.
@@ -68,26 +81,34 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 1. **Dinero en `NUMERIC(14,2)`** (`$table->decimal('amount', 14, 2)`, cast `decimal:2`). Nunca float.
 2. **Cantidades de inventario en `NUMERIC(14,4)`** (unidades fraccionables: kg, litros, metros).
-   Costos unitarios también con 4 decimales si hace falta precisión de costeo.
+   **Excepción de costeo (ADR 0004):** `unit_cost`/`avg_cost` en `NUMERIC(14,4)` y valores de inventario
+   (`total_cost`, `value_after`, `total_value`) en `NUMERIC(16,4)` como precisión interna; la UI redondea a 2.
+   Aritmética decimal siempre con `BcMath\Number` (+ `App\Domain\Shared\Support\Decimal`), nunca floats.
 3. **Inventario como ledger de movimientos**: el stock es la suma de `stock_movements` (entradas
    positivas, salidas negativas). Nunca se edita un saldo "a mano"; los saldos materializados son caché
    derivada del ledger y se recalculan desde él.
 4. **Documentos que se anulan, nunca se borran**: ventas, compras, cobros, pagos y movimientos tienen
    estado (`draft`, `posted`, `voided`) y una anulación genera el movimiento inverso. Prohibido
    `DELETE` sobre documentos contabilizados (sin soft delete como sustituto de anulación).
-5. **`company_id` en toda tabla de negocio** + trait `App\Models\Concerns\BelongsToCompany` (global
+5. **`company_id` en toda tabla de negocio** + trait `App\Domain\Shared\Tenancy\BelongsToCompany` (global
    scope + autollenado). Desactivar el scope solo de forma explícita y justificada. Excepción: `users`
    se aísla por membresía (`company_user`) con `CompanyMemberScope`.
 6. **Transacciones** (`DB::transaction`) en toda operación que toque stock o saldos, con bloqueo
    (`lockForUpdate`) de las filas de saldo afectadas para evitar condiciones de carrera.
 7. Fechas con zona horaria (`timestampTz`); la zona de negocio es la de la empresa (`America/La_Paz`).
-8. Auditoría: acciones sensibles registran `audit_logs` (inmutable) vía `App\Services\AuditLogger`.
+8. **Inventario (ADR 0004):** solo `PostInventoryDocument` / `VoidInventoryDocument` escriben el ledger
+   (vía `StockLedger`, que bloquea saldos en orden (warehouse, product)). Costo promedio por producto y
+   almacén; anulación al costo original; invariante `value >= 0` y `avg_cost >= 0` (si no, 422
+   `void_cost_inconsistency`); stock negativo configurable por empresa (`insufficient_stock`);
+   numeración sin huecos con `DocumentNumberer` dentro de la transacción; posting idempotente;
+   `document_date` ≤ hoy y ≥ hoy − `companies.document_backdate_days`. `php artisan inventory:verify [--repair]`.
+9. Auditoría: acciones sensibles registran `audit_logs` (inmutable) vía `App\Domain\Shared\Services\AuditLogger`.
 
 ## Comandos frecuentes
 
 ```bash
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
-make fresh     # migrate:fresh --seed (empresa demo + admin@ccp.test / password)
+make fresh     # migrate:fresh --seed (empresa demo, ~90 días de inventario, admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
@@ -107,4 +128,7 @@ IA (solo dev) http://localhost:8001/docs · Mailpit http://localhost:8025.
 - Un único `.env` en la raíz (lo usan compose, Laravel —montado como `/var/www/html/.env`— y FastAPI).
   Variables de dominio (CORS, Sanctum, cookie) **solo** desde `.env`.
 - En Windows, `node_modules` del contenedor web vive en un volumen (no en el bind mount).
+- PHP en dev: `opcache.validate_timestamps=0` (el stat de archivos sobre el bind mount de Windows costaba ~2–3 s
+  por request). `docker/php/dev-reload.sh` vigila `app/ config/ routes/ …` cada 2 s y recarga php-fpm solo;
+  tras `composer require` también se recarga (cambia `composer.lock`). Si algo no se refleja: `docker compose restart api`.
 - `phpunit.xml` fuerza variables con `<env>` y `<server>` porque Docker ya las define en `$_SERVER`.

@@ -1,7 +1,7 @@
 <?php
 
-use App\Services\Ai\AiClient;
-use App\Services\Ai\AiServiceException;
+use App\Infrastructure\Ai\AiClient;
+use App\Infrastructure\Ai\AiServiceException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
