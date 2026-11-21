@@ -5,11 +5,28 @@ import { cn } from 'cn'
 interface LogoProps {
   className?: string
   title?: string
+  /** mono: solid single-ink version for printing on white (same geometry as the original mark). */
+  variant?: 'color' | 'mono'
 }
 
 /** CCP mark: hexagon, open "C" and central node. Inline so the gradient id is unique per instance. */
-export function Logo({ className, title = 'CCP' }: LogoProps) {
+export function Logo({ className, title = 'CCP', variant = 'color' }: LogoProps) {
   const id = useId()
+  if (variant === 'mono') {
+    return (
+      <svg viewBox="0 0 64 64" role="img" aria-label={title} className={cn('size-8 shrink-0', className)}>
+        <path d="M32 4 L56.2 18 L56.2 46 L32 60 L7.8 46 L7.8 18 Z" fill="currentColor" />
+        <path
+          d="M40.5 23 A12 12 0 1 0 40.5 41"
+          fill="none"
+          stroke="#fff"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <circle cx="44" cy="32" r="3.5" fill="#fff" />
+      </svg>
+    )
+  }
   const gradient = `ccp-g-${id}`
   const shine = `ccp-s-${id}`
 
