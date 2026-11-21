@@ -20,7 +20,14 @@ export function Breadcrumbs() {
   if (match && match.item.href !== '/') {
     crumbs.push({ label: match.section.title })
   }
-  crumbs.push({ label: match?.item.title ?? 'Página no encontrada' })
+  if (match?.child) {
+    crumbs.push({ label: match.item.title, href: match.item.children?.[0]?.href })
+    const isDetail = pathname !== match.child.href
+    crumbs.push({ label: match.child.title, href: isDetail ? match.child.href : undefined })
+    if (isDetail) crumbs.push({ label: pathname.endsWith('/nuevo') ? 'Nuevo' : 'Detalle' })
+  } else {
+    crumbs.push({ label: match?.item.title ?? 'Página no encontrada' })
+  }
 
   return (
     <Breadcrumb>

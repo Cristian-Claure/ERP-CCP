@@ -2,14 +2,18 @@ import {
   BrainCircuit,
   Boxes,
   ChartLine,
+  FileStack,
   HandCoins,
+  History,
   Landmark,
   LayoutDashboard,
   type LucideIcon,
+  Package,
   Settings,
   ShoppingCart,
   Truck,
   Users,
+  Warehouse,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -20,6 +24,8 @@ export interface NavItem {
   permission?: string
   /** Extra words for the command palette search. */
   keywords?: string[]
+  /** Sub-pages (rendered as an expandable group in the sidebar). */
+  children?: NavItem[]
 }
 
 export interface NavSection {
@@ -49,6 +55,32 @@ export const navigation: NavSection[] = [
         icon: Boxes,
         permission: 'inventory.view',
         keywords: ['stock', 'kardex', 'productos'],
+        children: [
+          {
+            title: 'Productos',
+            href: '/inventario/productos',
+            icon: Package,
+            keywords: ['catálogo', 'stock', 'sku'],
+          },
+          {
+            title: 'Documentos',
+            href: '/inventario/documentos',
+            icon: FileStack,
+            keywords: ['entrada', 'salida', 'transferencia', 'ajuste'],
+          },
+          {
+            title: 'Kardex',
+            href: '/inventario/kardex',
+            icon: History,
+            keywords: ['movimientos', 'costo promedio'],
+          },
+          {
+            title: 'Almacenes',
+            href: '/inventario/almacenes',
+            icon: Warehouse,
+            keywords: ['sucursal', 'depósito'],
+          },
+        ],
       },
       {
         title: 'Ventas',
@@ -130,16 +162,33 @@ export function visibleNavigation(can: (permission: string) => boolean): NavSect
   return navigation
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.permission || can(item.permission)),
+      items: section.items
+        .filter((item) => !item.permission || can(item.permission))
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter((c) => !c.permission || can(c.permission)),
+        })),
     }))
     .filter((section) => section.items.length > 0)
 }
 
-export function findNavMatch(pathname: string): { section: NavSection; item: NavItem } | null {
+export interface NavMatch {
+  section: NavSection
+  item: NavItem
+  /** Matched sub-page, when the item has children. */
+  child?: NavItem
+}
+
+export function isNavActive(href: string, pathname: string): boolean {
+  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+}
+
+export function findNavMatch(pathname: string): NavMatch | null {
   for (const section of navigation) {
     for (const item of section.items) {
-      const matches = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
-      if (matches) return { section, item }
+      if (!isNavActive(item.href, pathname)) continue
+      const child = item.children?.find((c) => isNavActive(c.href, pathname))
+      return { section, item, child }
     }
   }
   return null

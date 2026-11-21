@@ -1,11 +1,13 @@
-import { motion } from 'motion/react'
+import { ChevronRight } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/features/auth/hooks'
 import { cn } from 'cn'
 
-import { type NavItem, visibleNavigation } from './navigation'
+import { isNavActive, type NavItem, visibleNavigation } from './navigation'
 
 interface SidebarNavProps {
   collapsed?: boolean
@@ -42,7 +44,21 @@ export function SidebarNav({ collapsed = false, layoutId, onNavigate }: SidebarN
           <ul className="flex flex-col gap-0.5">
             {section.items.map((item) => (
               <li key={item.href}>
-                <SidebarLink item={item} collapsed={collapsed} layoutId={layoutId} onNavigate={onNavigate} />
+                {item.children?.length ? (
+                  <SidebarGroup
+                    item={item}
+                    collapsed={collapsed}
+                    layoutId={layoutId}
+                    onNavigate={onNavigate}
+                  />
+                ) : (
+                  <SidebarLink
+                    item={item}
+                    collapsed={collapsed}
+                    layoutId={layoutId}
+                    onNavigate={onNavigate}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -57,19 +73,44 @@ interface SidebarLinkProps {
   collapsed: boolean
   layoutId: string
   onNavigate?: () => void
+  /** Group parents link to their first child and never show the pill when expanded. */
+  href?: string
+  showIndicator?: boolean
+  trailing?: React.ReactNode
 }
 
-function SidebarLink({ item, collapsed, layoutId, onNavigate }: SidebarLinkProps) {
+function ActivePill({ layoutId }: { layoutId: string }) {
+  return (
+    <motion.span
+      layoutId={layoutId}
+      className="absolute inset-0 rounded-lg bg-sidebar-accent ring-1 ring-brand/20 ring-inset"
+      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+    >
+      <span className="absolute top-1.5 bottom-1.5 -left-3 w-[3px] rounded-r-full bg-linear-to-b from-brand to-brand-accent shadow-[0_0_12px_var(--brand)]" />
+    </motion.span>
+  )
+}
+
+function SidebarLink({
+  item,
+  collapsed,
+  layoutId,
+  onNavigate,
+  href,
+  showIndicator = true,
+  trailing,
+}: SidebarLinkProps) {
   const { pathname } = useLocation()
-  const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+  const isActive = isNavActive(item.href, pathname)
   const Icon = item.icon
 
   const link = (
     <NavLink
-      to={item.href}
+      to={href ?? item.href}
       end={item.href === '/'}
       onClick={onNavigate}
       aria-label={collapsed ? item.title : undefined}
+      aria-current={isActive && showIndicator ? 'page' : undefined}
       className={cn(
         'group/link relative flex h-9 items-center gap-3 rounded-lg px-3 text-[13.5px] font-medium outline-none',
         'text-sidebar-foreground/80 transition-colors hover:text-sidebar-accent-foreground',
@@ -78,15 +119,7 @@ function SidebarLink({ item, collapsed, layoutId, onNavigate }: SidebarLinkProps
         collapsed && 'justify-center px-0',
       )}
     >
-      {isActive && (
-        <motion.span
-          layoutId={layoutId}
-          className="absolute inset-0 rounded-lg bg-sidebar-accent ring-1 ring-brand/20 ring-inset"
-          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-        >
-          <span className="absolute top-1.5 bottom-1.5 -left-3 w-[3px] rounded-r-full bg-linear-to-b from-brand to-brand-accent shadow-[0_0_12px_var(--brand)]" />
-        </motion.span>
-      )}
+      {isActive && showIndicator && <ActivePill layoutId={layoutId} />}
       <span
         className={cn(
           'relative z-10 flex size-5 items-center justify-center transition-colors',
@@ -99,13 +132,14 @@ function SidebarLink({ item, collapsed, layoutId, onNavigate }: SidebarLinkProps
       </span>
       <span
         className={cn(
-          'relative z-10 truncate transition-[opacity,width] duration-200',
+          'relative z-10 flex-1 truncate transition-[opacity,width] duration-200',
           collapsed ? 'w-0 opacity-0' : 'opacity-100',
         )}
       >
         {item.title}
       </span>
-      {!isActive && (
+      {!collapsed && trailing}
+      {!(isActive && showIndicator) && (
         <span className="absolute inset-0 rounded-lg bg-sidebar-accent/60 opacity-0 transition-opacity group-hover/link:opacity-100" />
       )}
     </NavLink>
@@ -120,5 +154,78 @@ function SidebarLink({ item, collapsed, layoutId, onNavigate }: SidebarLinkProps
         {item.title}
       </TooltipContent>
     </Tooltip>
+  )
+}
+
+/** Expandable module (e.g. Inventario → Productos, Documentos, Kardex, Almacenes). */
+function SidebarGroup({ item, collapsed, layoutId, onNavigate }: Omit<SidebarLinkProps, 'href'>) {
+  const { pathname } = useLocation()
+  const isActive = isNavActive(item.href, pathname)
+  const [open, setOpen] = useState(isActive)
+  const expanded = !collapsed && (open || isActive)
+  const children = item.children ?? []
+
+  return (
+    <div>
+      <div className="relative">
+        <SidebarLink
+          item={item}
+          href={children[0]?.href}
+          collapsed={collapsed}
+          layoutId={layoutId}
+          onNavigate={onNavigate}
+          showIndicator={collapsed}
+          trailing={
+            <button
+              type="button"
+              aria-label={expanded ? `Contraer ${item.title}` : `Expandir ${item.title}`}
+              aria-expanded={expanded}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setOpen(!expanded)
+              }}
+              className="relative z-10 -mr-1 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronRight className={cn('size-3.5 transition-transform', expanded && 'rotate-90')} />
+            </button>
+          }
+        />
+      </div>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.ul
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="ml-[22px] flex flex-col gap-0.5 overflow-hidden border-l border-sidebar-border py-1 pl-2.5"
+          >
+            {children.map((child) => {
+              const childActive = isNavActive(child.href, pathname)
+              return (
+                <li key={child.href}>
+                  <NavLink
+                    to={child.href}
+                    onClick={onNavigate}
+                    aria-current={childActive ? 'page' : undefined}
+                    className={cn(
+                      'group/link relative flex h-8 items-center rounded-lg px-3 text-[13px] transition-colors outline-none',
+                      'focus-visible:ring-2 focus-visible:ring-sidebar-ring/60',
+                      childActive
+                        ? 'font-medium text-sidebar-accent-foreground'
+                        : 'text-sidebar-foreground/70 hover:text-sidebar-accent-foreground',
+                    )}
+                  >
+                    {childActive && <ActivePill layoutId={layoutId} />}
+                    <span className="relative z-10 truncate">{child.title}</span>
+                  </NavLink>
+                </li>
+              )
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

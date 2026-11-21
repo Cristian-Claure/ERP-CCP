@@ -20,6 +20,8 @@ const user: AuthUser = {
     tax_id: '1',
     currency: 'BOB',
     timezone: 'America/La_Paz',
+    allow_negative_stock: false,
+    document_backdate_days: 30,
   },
   roles: ['vendedor'],
   permissions: ['dashboard.view', 'inventory.view', 'sales.view'],
@@ -47,7 +49,8 @@ describe('CommandPalette', () => {
     await userEvent.keyboard('{Control>}k{/Control}')
 
     expect(await screen.findByPlaceholderText('Buscar módulos, acciones…')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /inventario/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /inventario · productos/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /inventario · kardex/i })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /usuarios/i })).not.toBeInTheDocument()
   })
 })
