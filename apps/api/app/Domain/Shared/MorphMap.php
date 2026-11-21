@@ -2,6 +2,9 @@
 
 namespace App\Domain\Shared;
 
+use App\Domain\Inventory\Models\InventoryDocument;
+use App\Domain\Inventory\Models\Product;
+use App\Domain\Inventory\Models\Warehouse;
 use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Models\Company;
 use App\Domain\Shared\Models\User;
@@ -17,5 +20,8 @@ final class MorphMap
         'user' => User::class,
         'company' => Company::class,
         'audit_log' => AuditLog::class,
+        'product' => Product::class,
+        'warehouse' => Warehouse::class,
+        'inventory_document' => InventoryDocument::class,
     ];
 }
