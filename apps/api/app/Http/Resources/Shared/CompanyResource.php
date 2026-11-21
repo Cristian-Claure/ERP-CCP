@@ -23,6 +23,8 @@ class CompanyResource extends JsonResource
             'tax_id' => $this->tax_id,
             'currency' => $this->currency,
             'timezone' => $this->timezone,
+            'allow_negative_stock' => $this->allow_negative_stock,
+            'document_backdate_days' => $this->document_backdate_days,
         ];
     }
 }
