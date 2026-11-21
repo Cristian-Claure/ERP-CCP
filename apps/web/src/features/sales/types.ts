@@ -1,4 +1,5 @@
 import type { Unit, Warehouse } from '@/features/inventory/types'
+import type { PaginationMeta } from '@/lib/pagination'
 
 export type CustomerDocumentType = 'ci' | 'ci_complement' | 'nit' | 'passport' | 'cex'
 export type PaymentTerms = 'cash' | 'credit'
@@ -94,7 +95,7 @@ export interface LedgerEntry {
 
 export interface StatementResponse {
   data: LedgerEntry[]
-  meta: import('@/lib/pagination').PaginationMeta
+  meta: PaginationMeta
   opening_balance: string
   balance: string
   aging: Aging
@@ -290,7 +291,13 @@ export interface ReceivablesSummary {
   overdue: string
   aging: Aging
   customers_with_debt: number
-  top_debtors: { customer_id: number; name: string; city: string | null; balance: string; credit_limit: string }[]
+  top_debtors: {
+    customer_id: number
+    name: string
+    city: string | null
+    balance: string
+    credit_limit: string
+  }[]
 }
 
 export interface SalesSettings {

@@ -54,7 +54,9 @@ describe('computeSalesTotals (mirror of SalesCalculator)', () => {
   })
 
   it('reports invalid discounts with the API field keys', () => {
-    expect(computeSalesTotals([line('1', '10', '11')], '0', true).errors).toHaveProperty(['lines.0.discount_amount'])
+    expect(computeSalesTotals([line('1', '10', '11')], '0', true).errors).toHaveProperty([
+      'lines.0.discount_amount',
+    ])
     expect(computeSalesTotals([line('1', '10')], '10.01', true).errors).toHaveProperty('global_discount')
   })
 })

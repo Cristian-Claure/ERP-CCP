@@ -18,7 +18,8 @@ import type {
 
 export const salesApi = {
   // Customers
-  customers: async (params: ListParams) => (await api.get<Paginated<Customer>>('/api/v1/customers', { params })).data,
+  customers: async (params: ListParams) =>
+    (await api.get<Paginated<Customer>>('/api/v1/customers', { params })).data,
   customer: async (id: number) =>
     (await api.get<Customer & { aging?: Aging }>(`/api/v1/customers/${id}`)).data,
   cities: async () => (await api.get<{ data: string[] }>('/api/v1/customers/cities')).data.data,

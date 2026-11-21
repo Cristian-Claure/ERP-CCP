@@ -85,7 +85,8 @@ function useInvalidateSales() {
 export function useSaveCustomer() {
   const invalidate = useInvalidateSales()
   return useMutation({
-    mutationFn: ({ payload, id }: { payload: CustomerPayload; id?: number }) => salesApi.saveCustomer(payload, id),
+    mutationFn: ({ payload, id }: { payload: CustomerPayload; id?: number }) =>
+      salesApi.saveCustomer(payload, id),
     onSuccess: invalidate,
   })
 }
@@ -131,7 +132,8 @@ export function useDeleteSalesDocument() {
 export function useConvertQuote() {
   const invalidate = useInvalidateSales()
   return useMutation({
-    mutationFn: ({ id, type }: { id: number; type: 'invoice' | 'sales_note' }) => salesApi.convertQuote(id, type),
+    mutationFn: ({ id, type }: { id: number; type: 'invoice' | 'sales_note' }) =>
+      salesApi.convertQuote(id, type),
     onSuccess: invalidate,
   })
 }

@@ -92,7 +92,8 @@ export function computeSalesTotals(
     const discount = toScaled(line.discount_amount, 2) ?? 0n
     const ext = qty < 0n || price < 0n ? 0n : divRound(qty * price, 10_000n) // → cents
     if (discount < 0n || discount > ext) {
-      errors[`lines.${i}.discount_amount`] = 'El descuento no puede ser negativo ni mayor al importe de la línea.'
+      errors[`lines.${i}.discount_amount`] =
+        'El descuento no puede ser negativo ni mayor al importe de la línea.'
     }
     extended.push(ext)
     grosses.push(ext - (discount > ext ? ext : discount))

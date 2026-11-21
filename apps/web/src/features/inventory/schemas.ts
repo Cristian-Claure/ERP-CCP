@@ -18,6 +18,16 @@ const decimalString = (label: string) =>
     .transform(normalizeDecimal)
     .refine((v) => v === '' || DECIMAL_4.test(v), `${label}: número válido con hasta 4 decimales.`)
 
+const MONEY = /^\d+(\.\d{1,2})?$/
+
+/** Money (BOB): up to 2 decimals, Bolivian decimal comma accepted. '' = not set. */
+export const moneyString = (label: string) =>
+  z
+    .string()
+    .trim()
+    .transform(normalizeDecimal)
+    .refine((v) => v === '' || MONEY.test(v), `${label}: monto válido con hasta 2 decimales.`)
+
 export const documentLineSchema = z.object({
   product_id: z.number({ error: 'Selecciona un producto.' }).int().positive('Selecciona un producto.'),
   /** Set by the form from the selected product (not sent). */
@@ -125,21 +135,29 @@ export function toDocumentPayload(values: DocumentFormValues): DocumentPayload {
   }
 }
 
-export const productFormSchema = z.object({
-  sku: z
-    .string()
-    .trim()
-    .min(1, 'El código es obligatorio.')
-    .max(40)
-    .regex(/^[A-Za-z0-9._-]+$/, 'Solo letras, números, punto, guion o guion bajo.'),
-  name: z.string().trim().min(2, 'El nombre es obligatorio.').max(160),
-  barcode: z.string().trim().max(64),
-  description: z.string().trim().max(2000),
-  category_id: z.number().int().positive().nullable(),
-  unit_id: z.number({ error: 'Selecciona la unidad.' }).int().positive('Selecciona la unidad.'),
-  min_stock: decimalString('Stock mínimo'),
-  is_active: z.boolean(),
-})
+export const productFormSchema = z
+  .object({
+    sku: z
+      .string()
+      .trim()
+      .min(1, 'El código es obligatorio.')
+      .max(40)
+      .regex(/^[A-Za-z0-9._-]+$/, 'Solo letras, números, punto, guion o guion bajo.'),
+    name: z.string().trim().min(2, 'El nombre es obligatorio.').max(160),
+    barcode: z.string().trim().max(64),
+    description: z.string().trim().max(2000),
+    category_id: z.number().int().positive().nullable(),
+    unit_id: z.number({ error: 'Selecciona la unidad.' }).int().positive('Selecciona la unidad.'),
+    min_stock: decimalString('Stock mínimo'),
+    sale_price: moneyString('Precio de venta'),
+    min_price: moneyString('Precio mínimo'),
+    is_active: z.boolean(),
+  })
+  .superRefine((p, ctx) => {
+    if (p.min_price !== '' && p.sale_price !== '' && Number(p.min_price) > Number(p.sale_price)) {
+      ctx.addIssue({ code: 'custom', path: ['min_price'], message: 'No puede superar el precio de venta.' })
+    }
+  })
 
 export type ProductFormInput = z.input<typeof productFormSchema>
 export type ProductFormValues = z.output<typeof productFormSchema>
