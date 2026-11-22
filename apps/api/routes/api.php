@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Atlas\AtlasController;
 use App\Http\Controllers\Api\V1\Inventory\CatalogController;
 use App\Http\Controllers\Api\V1\Inventory\DocumentController;
 use App\Http\Controllers\Api\V1\Inventory\InventoryOverviewController;
@@ -91,6 +92,10 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
             Route::post('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
         });
+
+        // ---- Atlas (3D globe) --------------------------------------------------
+        Route::get('atlas/customers', [AtlasController::class, 'customers'])->name('atlas.customers');
+        Route::get('atlas/warehouses', [AtlasController::class, 'warehouses'])->name('atlas.warehouses');
 
         Route::get('dashboard/sales', [SalesOverviewController::class, 'dashboard'])->name('dashboard.sales');
         Route::get('settings/sales', [SalesOverviewController::class, 'settings'])->name('settings.sales');
