@@ -13,7 +13,6 @@ interface AtlasState {
   showClouds: boolean
   /** Hours added to "now" for the sun position (time control). */
   timeOffsetHours: number
-  hoveredId: number | null
   selectedId: number | null
   flyTarget: FlyTarget | null
   touring: boolean
@@ -23,6 +22,12 @@ interface AtlasState {
   lastInteraction: number
   /** 0..1 real texture loading progress (LoadingManager). */
   loadProgress: number
+  /** Pointer over columns/hexbins: screen position and the customers under it. */
+  hover: { x: number; y: number; customerIds: number[] } | null
+  /** Country under the pointer (borders layer). */
+  hoverCountry: string | null
+  /** ?perf=1 metrics, updated once per second. */
+  perf: { fps: number; calls: number; triangles: number } | null
 
   set: (patch: Partial<AtlasState>) => void
   toggleSegment: (segment: string) => void
@@ -39,13 +44,15 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   showBorders: true,
   showClouds: true,
   timeOffsetHours: 0,
-  hoveredId: null,
   selectedId: null,
   flyTarget: null,
   touring: false,
   cameraDistance: 3,
   lastInteraction: 0,
   loadProgress: 0,
+  hover: null,
+  hoverCountry: null,
+  perf: null,
 
   set: (patch) => set(patch),
   toggleSegment: (segment) =>
