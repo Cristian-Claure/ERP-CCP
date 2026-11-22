@@ -13,6 +13,9 @@ import { MobileSidebar } from './MobileSidebar'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
+/** Routes rendered edge to edge, without the page container. */
+const FULL_BLEED = ['/atlas']
+
 export function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -46,7 +49,12 @@ export function AppShell() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+              className={
+                // Immersive pages (CCP Atlas) use the whole area below the top bar.
+                FULL_BLEED.some((p) => location.pathname.startsWith(p))
+                  ? 'relative h-[calc(100dvh-4rem)] w-full overflow-hidden'
+                  : 'relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8'
+              }
             >
               <Outlet />
             </motion.div>
