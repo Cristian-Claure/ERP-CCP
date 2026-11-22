@@ -12,6 +12,7 @@ import {
 import { greatCircleArc, latLngToVector3 } from '../lib/geo'
 import arcFrag from '../shaders/arc.frag.glsl?raw'
 import arcVert from '../shaders/arc.vert.glsl?raw'
+import { useAtlasStore } from '../store'
 import type { AtlasCustomer, AtlasWarehouse } from '../types'
 
 /** Most relevant flows only: keeps the globe readable and the geometry small. */
@@ -102,6 +103,8 @@ export function Arcs({ customers, warehouses, animate }: ArcsProps) {
 
 /** Warehouses: small bright diamonds with a vertical beacon. */
 export function WarehouseMarkers({ warehouses }: { warehouses: AtlasWarehouse[] }) {
+  // Same visual size at any zoom (the markers are ~1.2 % of the view width).
+  const scale = useAtlasStore((s) => Math.max(0.0012, 0.012 * Math.min(1, (s.cameraDistance - 1) / 2.1)))
   return (
     <group>
       {warehouses.map((w) => {
@@ -110,7 +113,7 @@ export function WarehouseMarkers({ warehouses }: { warehouses: AtlasWarehouse[] 
           <mesh
             key={w.id}
             position={p}
-            scale={0.012}
+            scale={scale}
             onUpdate={(m) => m.lookAt(0, 0, 0)}
             raycast={() => null}
           >

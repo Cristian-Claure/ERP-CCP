@@ -36,7 +36,7 @@ export function TimeControl() {
       <Clock className="size-4 shrink-0 text-brand-accent" aria-hidden />
       <div className="min-w-0 flex-1">
         <label htmlFor="atlas-time" className="flex items-baseline justify-between gap-3 text-xs">
-          <span className="text-muted-foreground">Posición del sol</span>
+          <span className="hidden text-muted-foreground sm:inline">Posición del sol</span>
           <span className="num font-medium capitalize">{fmt.format(shown)} UTC</span>
         </label>
         <input

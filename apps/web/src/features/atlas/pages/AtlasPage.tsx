@@ -108,16 +108,20 @@ export function AtlasPage() {
             )}
           </div>
         </div>
-
-        <div className="flex min-h-0 flex-1 justify-end">
-          {selected && <CustomerPanel customer={selected} periodLabel={periodLabel(period)} />}
-        </div>
+        <div className="flex-1" />
 
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <Legend byStatus={byStatus} />
           {!use2D && <TimeControl />}
         </div>
       </div>
+
+      {/* Selected customer: right column on desktop, bottom sheet on phones. */}
+      {selected && (
+        <div className="absolute inset-x-3 bottom-3 z-20 flex max-h-[62%] sm:inset-x-auto sm:top-16 sm:right-4 sm:bottom-24 sm:max-h-none">
+          <CustomerPanel customer={selected} periodLabel={periodLabel(period)} />
+        </div>
+      )}
 
       {isError && (
         <div

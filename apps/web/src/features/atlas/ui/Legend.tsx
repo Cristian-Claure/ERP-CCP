@@ -12,7 +12,7 @@ export function Legend({ byStatus }: { byStatus: boolean }) {
   const entries = byStatus ? Object.values(STATUS_COLORS) : Object.values(SEGMENT_COLORS)
 
   return (
-    <div className={cn(panel, 'pointer-events-auto max-w-xs p-3 text-xs')}>
+    <div className={cn(panel, 'pointer-events-auto max-w-xs p-2.5 text-[11px] sm:p-3 sm:text-xs')}>
       {mode === 'columns' ? (
         <>
           <p className="mb-1.5 font-medium">{byStatus ? 'Estado de cobro' : 'Segmento'}</p>
@@ -27,7 +27,9 @@ export function Legend({ byStatus }: { byStatus: boolean }) {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-muted-foreground">Altura: ventas del período · se agrupan al alejarse.</p>
+          <p className="mt-2 hidden text-muted-foreground sm:block">
+            Altura: ventas del período · se agrupan al alejarse.
+          </p>
         </>
       ) : (
         <>
@@ -45,7 +47,7 @@ export function Legend({ byStatus }: { byStatus: boolean }) {
         </>
       )}
       {showArcs && (
-        <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+        <p className="mt-2 hidden items-center gap-1.5 text-muted-foreground sm:flex">
           <span className="h-px w-5 bg-gradient-to-r from-brand-accent to-indigo-300" /> Almacén → cliente
           <span className="ml-1 size-2 rotate-45 bg-white" aria-label="almacén" />
         </p>

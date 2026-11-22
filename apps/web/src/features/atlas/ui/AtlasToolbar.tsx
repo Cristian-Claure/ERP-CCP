@@ -42,7 +42,7 @@ export function AtlasToolbar({ customers, withReceivables, reducedMotion, onShow
       <Popover open={searchOpen} onOpenChange={setSearchOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className={cn(panel, 'h-9 gap-2')}>
-            <Search /> <span className="hidden sm:inline">Buscar cliente</span>
+            <Search /> <span className="sr-only sm:not-sr-only">Buscar cliente</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[min(92vw,340px)] p-0">
@@ -77,7 +77,7 @@ export function AtlasToolbar({ customers, withReceivables, reducedMotion, onShow
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className={cn(panel, 'h-9 gap-2')}>
-            <SlidersHorizontal /> <span className="hidden sm:inline">Filtros y capas</span>
+            <SlidersHorizontal /> <span className="sr-only sm:not-sr-only">Filtros y capas</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-72 space-y-4">
@@ -176,7 +176,7 @@ export function AtlasToolbar({ customers, withReceivables, reducedMotion, onShow
         onClick={() => s.set({ touring: !s.touring, selectedId: null })}
       >
         {s.touring ? <Pause /> : <Navigation />}{' '}
-        <span className="hidden sm:inline">{s.touring ? 'Detener tour' : 'Tour'}</span>
+        <span className="sr-only sm:not-sr-only">{s.touring ? 'Detener tour' : 'Tour'}</span>
       </Button>
       <Button
         variant="outline"

@@ -12,6 +12,12 @@ interface LayerProps {
   byStatus: boolean
 }
 
+/**
+ * Bars shrink as the camera approaches: a column sized for the whole continent
+ * would otherwise swallow the camera when looking at a neighbourhood.
+ */
+const zoomFactor = (distance: number) => Math.min(1, Math.max(0.08, (distance - 1) / 2.1))
+
 /** Hexbin size (degrees) by camera distance. */
 const hexSizeFor = (distance: number) => (distance < 1.5 ? 0.35 : distance < 2.2 ? 1.2 : 3)
 
@@ -37,6 +43,7 @@ function useSelectHandler() {
  */
 export function CustomerColumns({ customers, byStatus }: LayerProps) {
   const cellDeg = useAtlasStore((s) => cellSizeForDistance(s.cameraDistance))
+  const zoom = useAtlasStore((s) => Math.round(zoomFactor(s.cameraDistance) * 20) / 20)
   const onSelect = useSelectHandler()
 
   const items = useMemo<BarItem[]>(() => {
@@ -49,8 +56,8 @@ export function CustomerColumns({ customers, byStatus }: LayerProps) {
         key: c.key,
         lat: c.lat,
         lng: c.lng,
-        height: columnHeight(c.weight, max),
-        width: 0.0065 + Math.min(0.02, 0.0035 * Math.log2(n + 1)) * (n > 1 ? 1 : 0),
+        height: columnHeight(c.weight, max) * zoom,
+        width: (0.0065 + Math.min(0.02, 0.0035 * Math.log2(n + 1)) * (n > 1 ? 1 : 0)) * Math.max(zoom, 0.3),
         color: colorFor(
           c.members.map((m) => m.customer),
           byStatus,
@@ -58,7 +65,7 @@ export function CustomerColumns({ customers, byStatus }: LayerProps) {
         customerIds: c.members.map((m) => m.id),
       }
     })
-  }, [customers, cellDeg, byStatus])
+  }, [customers, cellDeg, byStatus, zoom])
 
   return (
     <InstancedBars
@@ -73,6 +80,7 @@ export function CustomerColumns({ customers, byStatus }: LayerProps) {
 /** Alternative mode: hexagonal prisms with the sales of each zone. */
 export function SalesHexbins({ customers }: { customers: AtlasCustomer[] }) {
   const size = useAtlasStore((s) => hexSizeFor(s.cameraDistance))
+  const zoom = useAtlasStore((s) => Math.round(zoomFactor(s.cameraDistance) * 20) / 20)
   const onSelect = useSelectHandler()
 
   const items = useMemo<BarItem[]>(() => {
@@ -82,12 +90,12 @@ export function SalesHexbins({ customers }: { customers: AtlasCustomer[] }) {
       key: b.key,
       lat: b.lat,
       lng: b.lng,
-      height: 0.01 + 0.3 * Math.sqrt(b.weight / max),
+      height: (0.01 + 0.3 * Math.sqrt(b.weight / max)) * zoom,
       width: ((size * Math.PI) / 180) * 1.6,
       color: rampColor(Math.sqrt(b.weight / max)),
       customerIds: b.members.map((m) => m.id),
     }))
-  }, [customers, size])
+  }, [customers, size, zoom])
 
   return (
     <InstancedBars
