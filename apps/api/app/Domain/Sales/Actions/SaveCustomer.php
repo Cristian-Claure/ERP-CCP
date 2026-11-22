@@ -3,6 +3,7 @@
 namespace App\Domain\Sales\Actions;
 
 use App\Domain\Sales\Data\CustomerData;
+use App\Domain\Sales\Events\CustomerSaved;
 use App\Domain\Sales\Models\Customer;
 use App\Domain\Shared\Models\User;
 use App\Domain\Shared\Services\AuditLogger;
@@ -31,6 +32,8 @@ class SaveCustomer
             if ($isNew || $old !== $new) {
                 $this->audit->log($isNew ? 'customers.created' : 'customers.credit_updated', actor: $actor, auditable: $customer, old: $old, new: $new);
             }
+
+            CustomerSaved::dispatch($customer);
 
             return $customer;
         });

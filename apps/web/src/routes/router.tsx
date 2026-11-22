@@ -39,6 +39,7 @@ const SalesDocumentsPage = page(
 const SalesDocumentPage = page(() => import('@/features/sales/pages/SalesDocumentPage'), 'SalesDocumentPage')
 const SalesPrintPage = page(() => import('@/features/sales/pages/SalesPrintPage'), 'SalesPrintPage')
 const PaymentsPage = page(() => import('@/features/sales/pages/PaymentsPage'), 'PaymentsPage')
+const AtlasPage = page(() => import('@/features/atlas/pages/AtlasPage'), 'AtlasPage')
 const SettingsPage = page(() => import('@/features/settings/pages/SettingsPage'), 'SettingsPage')
 
 const withSuspense = (node: ReactNode, fallback: ReactNode = <PageSkeleton />) => (
@@ -46,7 +47,7 @@ const withSuspense = (node: ReactNode, fallback: ReactNode = <PageSkeleton />) =
 )
 
 /** Paths with a real page; every other navigation entry shows "coming soon". */
-const IMPLEMENTED = ['/', '/inventario', '/ventas', '/sistema/configuracion']
+const IMPLEMENTED = ['/', '/inventario', '/ventas', '/atlas', '/sistema/configuracion']
 
 const placeholderRoutes = navigation
   .flatMap((section) => section.items)
@@ -106,6 +107,11 @@ export const router = createBrowserRouter([
                 children: [{ path: 'cobros', element: withSuspense(<PaymentsPage />) }],
               },
             ],
+          },
+          {
+            path: 'atlas',
+            element: <RequirePermission permission="customers.view" />,
+            children: [{ index: true, element: withSuspense(<AtlasPage />) }],
           },
           { path: 'sistema/configuracion', element: withSuspense(<SettingsPage />) },
           ...placeholderRoutes,

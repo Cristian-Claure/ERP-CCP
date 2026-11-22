@@ -4,6 +4,7 @@ import {
   ChartLine,
   FileStack,
   FileText,
+  Globe2,
   HandCoins,
   History,
   Landmark,
@@ -144,6 +145,13 @@ export const navigation: NavSection[] = [
   {
     title: 'Inteligencia',
     items: [
+      {
+        title: 'CCP Atlas',
+        href: '/atlas',
+        icon: Globe2,
+        permission: 'customers.view',
+        keywords: ['globo', 'mapa', '3d', 'clientes', 'geografía'],
+      },
       {
         title: 'Asistente IA',
         href: '/ia/asistente',

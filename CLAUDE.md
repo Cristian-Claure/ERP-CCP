@@ -130,6 +130,13 @@ docs/      architecture.md y ADRs (docs/adr/)
     `CustomerLedger`; `customers.balance` y `sales_documents.paid_amount` son cachés. `php artisan customers:verify [--repair]`.
     La fecha de cualquier documento respeta `DocumentDateWindow` (Shared).
 
+### CCP Atlas (apps/web/src/features/atlas)
+
+- Escena a medida con `three` + `@react-three/fiber` (sin drei). Shaders GLSL en `shaders/*.glsl` (`?raw`).
+  Lógica pura en `lib/` con tests. Cada módulo < ~300 líneas. Dispose explícito de materiales,
+  geometrías y texturas. Respetar `prefers-reduced-motion`. Ver `docs/frontend/atlas.md`.
+- Endpoints `/atlas/*` cacheados en Redis con versión por empresa (`AtlasCache::bump` vía eventos).
+
 ## Comandos frecuentes
 
 ```bash
