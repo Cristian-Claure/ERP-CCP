@@ -90,7 +90,7 @@ Convenciones y reglas de base de datos en [`CLAUDE.md`](CLAUDE.md).
 - [x] **Fase 0 — Cimientos:** monorepo, Docker, auth Sanctum, multiempresa (roles por empresa), health, servicio IA, AppShell y dashboard
 - [x] **Fase 1 — Inventario:** productos, almacenes, ledger de movimientos, costo promedio, kardex con CSV, ajustes por conteo, anulaciones, numeración sin huecos, `inventory:verify` y DataTable reutilizable
 - [x] **Fase 2 — Ventas** ([ADR 0005](docs/adr/0005-ventas-impuestos-y-cuentas-por-cobrar.md)): clientes con ubicación, cotizaciones, facturas y notas de venta con salida de stock atómica (SAL- enlazado), IVA incluido desglosado, margen por línea, autorizaciones bajo costo y sobre límite de crédito, cobros, cuentas por cobrar con antigüedad, `customers:verify`, documento imprimible y dashboard con datos reales
-- [ ] **Fase 2 · CCP Atlas** — globo 3D de clientes, ventas y deuda
+- [x] **Fase 2 · CCP Atlas** ([docs/frontend/atlas.md](docs/frontend/atlas.md)): globo 3D a medida (React Three Fiber + shaders propios) con el sol real, columnas de clientes por ventas y estado de cobro, clustering, arcos almacén → cliente, hexbins, tour y vista 2D sin WebGL
 - [ ] **Fase 2 · POS** — pantalla de mostrador
 - [ ] **Fase 3 — Compras:** proveedores, órdenes, recepciones con entrada a stock
 - [ ] **Fase 4 — Finanzas:** caja y bancos, cuentas por cobrar y por pagar
