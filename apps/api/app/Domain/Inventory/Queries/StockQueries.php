@@ -66,14 +66,19 @@ class StockQueries
      *
      * @return Builder<StockMovement>
      */
+    /**
+     * Bounds come in the company timezone; they are converted to UTC because the
+     * query builder serializes dates WITHOUT offset (a 00:00 La Paz bound would be
+     * read as 00:00 UTC and hide the evening movements).
+     */
     public function kardex(Product $product, int $warehouseId, CarbonImmutable $from, CarbonImmutable $to): Builder
     {
         return StockMovement::query()
             ->with('document:id,number,type,status')
             ->where('product_id', $product->id)
             ->where('warehouse_id', $warehouseId)
-            ->where('occurred_at', '>=', $from)
-            ->where('occurred_at', '<', $to)
+            ->where('occurred_at', '>=', $from->utc())
+            ->where('occurred_at', '<', $to->utc())
             ->orderBy('id');
     }
 
@@ -87,7 +92,7 @@ class StockQueries
         $last = StockMovement::query()
             ->where('product_id', $product->id)
             ->where('warehouse_id', $warehouseId)
-            ->where('occurred_at', '<', $from)
+            ->where('occurred_at', '<', $from->utc())
             ->orderByDesc('id')
             ->first(['quantity_after', 'avg_cost_after', 'value_after']);
 
