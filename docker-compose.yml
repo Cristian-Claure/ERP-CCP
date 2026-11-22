@@ -111,6 +111,8 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL}
       VITE_APP_VERSION: ${VITE_APP_VERSION}
+      VITE_MAP_TILE_URL: ${VITE_MAP_TILE_URL:-}
+      VITE_MAP_TILE_ATTRIBUTION: ${VITE_MAP_TILE_ATTRIBUTION:-}
       VITE_USE_POLLING: "true"
     ports:
       - "${WEB_PORT:-5173}:5173"

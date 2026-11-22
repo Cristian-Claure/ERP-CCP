@@ -33,6 +33,9 @@ class SaveProductRequest extends FormRequest
             'category_id' => ['nullable', 'integer', Rule::exists('product_categories', 'id')->where('company_id', $companyId)],
             'unit_id' => ['required', 'integer', Rule::exists('units', 'id')->where('company_id', $companyId)],
             'min_stock' => ['nullable', 'numeric', 'min:0', 'decimal:0,4'],
+            // Price list, VAT included (ADR 0005).
+            'sale_price' => ['nullable', 'numeric', 'min:0', 'decimal:0,2', 'max:999999999999'],
+            'min_price' => ['nullable', 'numeric', 'min:0', 'decimal:0,2', 'lte:sale_price'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
@@ -46,6 +49,7 @@ class SaveProductRequest extends FormRequest
             'sku.unique' => 'Ya existe un producto con ese código.',
             'sku.regex' => 'Usa solo letras, números, punto, guion o guion bajo.',
             'unit_id.required' => 'Selecciona la unidad de medida.',
+            'min_price.lte' => 'El precio mínimo no puede superar el precio de venta.',
         ];
     }
 }

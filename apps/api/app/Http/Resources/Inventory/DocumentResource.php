@@ -35,6 +35,12 @@ class DocumentResource extends JsonResource
             'adjustment_reason' => $this->adjustment_reason?->value,
             'adjustment_reason_label' => $this->adjustment_reason?->label(),
             'reference' => $this->reference,
+            // Business document that generated it (e.g. the sale of a SAL-).
+            'source' => $this->source_type === null ? null : [
+                'type' => $this->source_type,
+                'id' => $this->source_id,
+                'number' => $this->whenLoaded('source', fn () => $this->source?->number),
+            ],
             'notes' => $this->notes,
             'total_cost' => $this->total_cost,
             'lines_count' => $this->whenCounted('lines'),

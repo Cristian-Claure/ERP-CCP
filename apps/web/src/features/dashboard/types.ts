@@ -16,30 +16,7 @@ export interface Kpi {
   source: 'live' | 'demo'
 }
 
-export interface SalesPoint {
-  /** ISO month, e.g. "2026-01". */
-  month: string
-  label: string
-  current: number
-  previous: number
-}
-
-export type OperationType = 'venta' | 'compra' | 'cobro' | 'pago' | 'ajuste'
-export type OperationStatus = 'completada' | 'pendiente' | 'anulada'
-
-export interface Operation {
-  id: string
-  code: string
-  type: OperationType
-  counterparty: string
-  date: string
-  amount: number
-  status: OperationStatus
-}
-
 export interface DashboardSummary {
   currency: string
   kpis: Kpi[]
-  sales: SalesPoint[]
-  recentOperations: Operation[]
 }

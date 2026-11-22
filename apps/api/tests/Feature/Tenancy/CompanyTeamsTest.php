@@ -41,7 +41,7 @@ it('resolves roles and permissions per active company', function () {
         ->assertJsonPath('company.id', $this->companyB->id)
         ->assertJsonPath('roles', ['vendedor']);
 
-    expect($response->json('permissions'))->toContain('sales.manage')
+    expect($response->json('permissions'))->toContain('sales.create')
         ->not->toContain('users.manage');
 });
 

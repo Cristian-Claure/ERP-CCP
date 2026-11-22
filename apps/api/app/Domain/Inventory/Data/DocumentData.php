@@ -5,6 +5,7 @@ namespace App\Domain\Inventory\Data;
 use App\Domain\Inventory\Enums\AdjustmentReason;
 use App\Domain\Inventory\Enums\DocumentType;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 
 final readonly class DocumentData
 {
@@ -21,6 +22,7 @@ final readonly class DocumentData
         public ?string $reference = null,
         public ?string $notes = null,
         public ?string $idempotencyKey = null,
+        public ?Model $source = null,
     ) {}
 
     /**

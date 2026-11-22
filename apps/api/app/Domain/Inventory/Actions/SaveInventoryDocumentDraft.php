@@ -44,6 +44,9 @@ class SaveInventoryDocumentDraft
                 'type' => $data->type,
                 'created_by' => $actor->id,
                 'idempotency_key' => $data->idempotencyKey,
+                // Business document that generated it (e.g. a sale). Set once, on creation.
+                'source_type' => $data->source?->getMorphClass(),
+                'source_id' => $data->source?->getKey(),
             ]);
 
             $document->fill([

@@ -26,6 +26,8 @@ class ProductResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'min_stock' => $this->min_stock,
+            'sale_price' => $this->sale_price,
+            'min_price' => $this->min_price,
             'is_active' => $this->is_active,
             'unit' => UnitResource::make($this->whenLoaded('unit')),
             'category' => CategoryResource::make($this->whenLoaded('category')),

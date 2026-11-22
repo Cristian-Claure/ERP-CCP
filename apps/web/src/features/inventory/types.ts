@@ -19,6 +19,8 @@ export interface Warehouse {
   code: string
   name: string
   address: string | null
+  latitude?: Decimal | null
+  longitude?: Decimal | null
   is_active: boolean
 }
 
@@ -29,6 +31,9 @@ export interface Product {
   name: string
   description: string | null
   min_stock: Decimal
+  /** Price list, VAT included (ADR 0005). */
+  sale_price: Decimal | null
+  min_price: Decimal | null
   is_active: boolean
   unit?: Unit
   category?: Category | null

@@ -27,7 +27,7 @@ class DocumentController extends Controller
 {
     use PaginatesRequests;
 
-    private const DETAIL_RELATIONS = ['lines.product.unit', 'warehouse', 'destinationWarehouse', 'creator', 'poster', 'voider'];
+    private const DETAIL_RELATIONS = ['lines.product.unit', 'warehouse', 'destinationWarehouse', 'creator', 'poster', 'voider', 'source'];
 
     /**
      * GET /inventory/documents?filter[status]=&filter[type]=&filter[warehouse_id]=&filter[search]=

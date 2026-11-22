@@ -65,8 +65,11 @@ class StockLedger
             ->get()
             ->keyBy(fn (StockBalance $b) => $b->product_id.':'.$b->warehouse_id);
 
-        $products = Product::query()->withoutGlobalScopes()->whereIn('id', $pairs->pluck(0))->get(['id', 'sku', 'name'])->keyBy('id');
-        $warehouses = Warehouse::query()->withoutGlobalScopes()->whereIn('id', $pairs->pluck(1))->get(['id', 'name'])->keyBy('id');
+        // Scope disabled because jobs may run without an HTTP company; filter explicitly.
+        $products = Product::query()->withoutGlobalScopes()->where('company_id', $company->id)
+            ->whereIn('id', $pairs->pluck(0))->get(['id', 'sku', 'name'])->keyBy('id');
+        $warehouses = Warehouse::query()->withoutGlobalScopes()->where('company_id', $company->id)
+            ->whereIn('id', $pairs->pluck(1))->get(['id', 'name'])->keyBy('id');
 
         return new LedgerSession(
             calculator: $this->calculator,

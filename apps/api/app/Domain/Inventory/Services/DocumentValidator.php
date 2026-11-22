@@ -8,6 +8,7 @@ use App\Domain\Inventory\Models\InventoryDocument;
 use App\Domain\Inventory\Models\Product;
 use App\Domain\Inventory\Models\Warehouse;
 use App\Domain\Shared\Models\Company;
+use App\Domain\Shared\Services\DocumentDateWindow;
 use BcMath\Number;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -18,17 +19,14 @@ use DateTimeInterface;
  */
 class DocumentValidator
 {
+    public function __construct(private readonly DocumentDateWindow $dates) {}
+
     /**
-     * Allowed document_date window: [today - company.document_backdate_days, today],
-     * "today" in the company's timezone.
-     *
      * @return array{0: CarbonImmutable, 1: CarbonImmutable}
      */
     public function dateWindow(Company $company): array
     {
-        $today = CarbonImmutable::now($company->timezone)->startOfDay();
-
-        return [$today->subDays($company->document_backdate_days), $today];
+        return $this->dates->window($company);
     }
 
     /**
@@ -36,22 +34,7 @@ class DocumentValidator
      */
     public function dateErrors(Company $company, DateTimeInterface $date): array
     {
-        [$min, $max] = $this->dateWindow($company);
-        $day = CarbonImmutable::parse($date->format('Y-m-d'), $company->timezone)->startOfDay();
-
-        if ($day->greaterThan($max)) {
-            return ['document_date' => ['La fecha del documento no puede ser futura.']];
-        }
-
-        if ($day->lessThan($min)) {
-            return ['document_date' => [sprintf(
-                'La fecha del documento no puede ser anterior al %s (ventana de %d días).',
-                $min->format('d/m/Y'),
-                $company->document_backdate_days,
-            )]];
-        }
-
-        return [];
+        return $this->dates->errors($company, $date);
     }
 
     /**

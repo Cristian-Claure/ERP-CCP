@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'code', 'name', 'address', 'is_active'])]
+#[Fillable(['company_id', 'code', 'name', 'address', 'latitude', 'longitude', 'is_active'])]
 #[UseFactory(WarehouseFactory::class)]
 #[UsePolicy(WarehousePolicy::class)]
 class Warehouse extends Model
@@ -22,7 +22,7 @@ class Warehouse extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'latitude' => 'decimal:6', 'longitude' => 'decimal:6'];
     }
 
     /**

@@ -28,6 +28,8 @@ export interface ProductPayload {
   category_id?: number | null
   unit_id: number
   min_stock?: string | null
+  sale_price?: string | null
+  min_price?: string | null
   is_active?: boolean
 }
 

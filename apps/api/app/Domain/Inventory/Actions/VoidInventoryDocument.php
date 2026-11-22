@@ -48,7 +48,7 @@ class VoidInventoryDocument
             }
 
             if (mb_strlen($reason) < self::MIN_REASON_LENGTH) {
-                throw InvalidDocumentException::with(['reason' => 'El motivo de anulación es obligatorio (mínimo 5 caracteres).']);
+                throw InvalidDocumentException::with(['reason' => sprintf('El motivo de anulación es obligatorio (mínimo %d caracteres).', self::MIN_REASON_LENGTH)]);
             }
 
             $company = $doc->company()->firstOrFail();

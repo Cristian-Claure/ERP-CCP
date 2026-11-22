@@ -20,7 +20,11 @@ ERP web para pymes: inventario, ventas, compras, finanzas e inteligencia de nego
 
 ## Capturas
 
-> Pendientes: login, dashboard (oscuro y claro), sidebar colapsado, command palette y vista móvil.
+| Dashboard | Venta con margen y cobros |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Venta](docs/screenshots/sale.png) |
+| **Estado de cuenta del cliente** | **Documento imprimible (PDF)** |
+| ![Estado de cuenta](docs/screenshots/customer-statement.png) | ![PDF](docs/screenshots/print.png) |
 
 ## Stack
 
@@ -35,6 +39,10 @@ ERP web para pymes: inventario, ventas, compras, finanzas e inteligencia de nego
 
 Requisitos: Docker Desktop (o Docker Engine + Compose v2), GNU Make y Git. **No** hace falta PHP,
 Composer ni Python en el host.
+
+> **Windows:** ejecuta los comandos `make` desde **PowerShell**. En Git Bash, la conversión automática
+> de rutas de MSYS rompe los volúmenes de Docker (`-w /app` se convierte en `C:/Program Files/Git/app`);
+> si usas Git Bash, antepón `MSYS_NO_PATHCONV=1` (por ejemplo `MSYS_NO_PATHCONV=1 make up`).
 
 ```bash
 git clone https://github.com/Cristian-Claure/ERP-CCP.git
@@ -81,11 +89,18 @@ Convenciones y reglas de base de datos en [`CLAUDE.md`](CLAUDE.md).
 
 - [x] **Fase 0 — Cimientos:** monorepo, Docker, auth Sanctum, multiempresa (roles por empresa), health, servicio IA, AppShell y dashboard
 - [x] **Fase 1 — Inventario:** productos, almacenes, ledger de movimientos, costo promedio, kardex con CSV, ajustes por conteo, anulaciones, numeración sin huecos, `inventory:verify` y DataTable reutilizable
-- [ ] **Fase 2 — Ventas** *(propuesta: [docs/roadmap/fase-2-ventas.md](docs/roadmap/fase-2-ventas.md))*: clientes, cotizaciones, ventas con salida de stock atómica, cobros y cuentas por cobrar
+- [x] **Fase 2 — Ventas** ([ADR 0005](docs/adr/0005-ventas-impuestos-y-cuentas-por-cobrar.md)): clientes con ubicación, cotizaciones, facturas y notas de venta con salida de stock atómica (SAL- enlazado), IVA incluido desglosado, margen por línea, autorizaciones bajo costo y sobre límite de crédito, cobros, cuentas por cobrar con antigüedad, `customers:verify`, documento imprimible y dashboard con datos reales
+- [ ] **Fase 2 · CCP Atlas** — globo 3D de clientes, ventas y deuda
+- [ ] **Fase 2 · POS** — pantalla de mostrador
 - [ ] **Fase 3 — Compras:** proveedores, órdenes, recepciones con entrada a stock
 - [ ] **Fase 4 — Finanzas:** caja y bancos, cuentas por cobrar y por pagar
 - [ ] **Fase 5 — Inteligencia:** pronósticos de demanda reales y asistente IA sobre los datos de la empresa
 - [ ] **Fase 6 — Sistema:** gestión de usuarios y roles, configuración de empresa, auditoría visible
+
+## Software libre
+
+Solo dependencias con licencia aprobada por la OSI y datos abiertos: ver
+[`docs/LICENSES.md`](docs/LICENSES.md) y [`docs/CREDITS.md`](docs/CREDITS.md).
 
 ## Licencia
 

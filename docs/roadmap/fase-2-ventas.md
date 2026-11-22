@@ -1,6 +1,12 @@
-# Fase 2 — Ventas (propuesta)
+# Fase 2 — Ventas (propuesta original)
 
-- **Estado:** propuesta, pendiente de aprobación. No iniciada.
+> **Estado: implementada** en `feat/fase-2-ventas` (PR #3). Las decisiones abiertas se resolvieron así:
+> SAL- visible enlazado en ambos sentidos; bajo costo/mínimo bloqueado salvo permiso + motivo; factura y
+> nota de venta como tipos del mismo documento; POS como parte aparte. **Corrección fiscal:** los precios
+> incluyen IVA (se desglosa, no se suma) y el IT no va en el documento. Ver
+> [ADR 0005](../adr/0005-ventas-impuestos-y-cuentas-por-cobrar.md). Este documento queda como registro.
+
+- **Estado original:** propuesta, pendiente de aprobación.
 - **Fecha:** 2026-11-22
 - **Depende de:** Fase 1 (inventario) mergeada en `main`.
 - **Rama sugerida:** `feat/fase-2-ventas`

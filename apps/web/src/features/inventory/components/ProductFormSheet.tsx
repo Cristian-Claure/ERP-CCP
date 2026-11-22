@@ -56,6 +56,8 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
             category_id: product.category?.id ?? null,
             unit_id: product.unit?.id ?? 0,
             min_stock: String(Number(product.min_stock)),
+            sale_price: product.sale_price ?? '',
+            min_price: product.min_price ?? '',
             is_active: product.is_active,
           }
         : blank(),
@@ -71,6 +73,8 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
           barcode: values.barcode || null,
           description: values.description || null,
           min_stock: values.min_stock || '0',
+          sale_price: values.sale_price || null,
+          min_price: values.min_price || null,
         },
       })
       toast.success(product ? 'Producto actualizado' : 'Producto creado', {
@@ -186,6 +190,34 @@ export function ProductFormSheet({ open, onOpenChange, product, onSaved }: Produ
               </FieldDescription>
               <FieldError errors={[errors.min_stock]} />
             </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field data-invalid={!!errors.sale_price}>
+                <FieldLabel htmlFor="sale_price">Precio de venta (Bs)</FieldLabel>
+                <Input
+                  id="sale_price"
+                  inputMode="decimal"
+                  className="num"
+                  placeholder="0,00"
+                  aria-invalid={!!errors.sale_price}
+                  {...form.register('sale_price')}
+                />
+                <FieldDescription>Con IVA incluido. Se sugiere al vender.</FieldDescription>
+                <FieldError errors={[errors.sale_price]} />
+              </Field>
+              <Field data-invalid={!!errors.min_price}>
+                <FieldLabel htmlFor="min_price">Precio mínimo (Bs)</FieldLabel>
+                <Input
+                  id="min_price"
+                  inputMode="decimal"
+                  className="num"
+                  placeholder="Opcional"
+                  aria-invalid={!!errors.min_price}
+                  {...form.register('min_price')}
+                />
+                <FieldDescription>Vender por debajo requiere autorización.</FieldDescription>
+                <FieldError errors={[errors.min_price]} />
+              </Field>
+            </div>
             <Field>
               <FieldLabel htmlFor="description">Descripción</FieldLabel>
               <Textarea id="description" rows={3} {...form.register('description')} />
@@ -230,6 +262,8 @@ function blank(): ProductFormInput {
     category_id: null,
     unit_id: 0,
     min_stock: '0',
+    sale_price: '',
+    min_price: '',
     is_active: true,
   }
 }

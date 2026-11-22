@@ -28,6 +28,8 @@ class SaveWarehouseRequest extends FormRequest
             ],
             'name' => ['required', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,6', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,6', 'required_with:latitude'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
