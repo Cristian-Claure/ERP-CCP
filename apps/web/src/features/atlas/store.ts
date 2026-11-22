@@ -21,6 +21,8 @@ interface AtlasState {
   cameraDistance: number
   /** Last pointer interaction (pauses auto-rotation). */
   lastInteraction: number
+  /** 0..1 real texture loading progress (LoadingManager). */
+  loadProgress: number
 
   set: (patch: Partial<AtlasState>) => void
   toggleSegment: (segment: string) => void
@@ -43,6 +45,7 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   touring: false,
   cameraDistance: 3,
   lastInteraction: 0,
+  loadProgress: 0,
 
   set: (patch) => set(patch),
   toggleSegment: (segment) =>
