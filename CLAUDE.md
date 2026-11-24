@@ -92,7 +92,8 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 - Playwright (`@playwright/test`, imagen oficial `mcr.microsoft.com/playwright`, perfil compose `e2e`).
   Un reenviador TCP mantiene los orígenes `localhost:5173/8000`, así las cookies de Sanctum funcionan igual.
-- Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido; solo local/testing).
+- Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido y «Proveedor E2E SRL»; solo local/testing).
+- Esperar los datos de la página antes de escribir (`waitForResponse`): en dev, StrictMode + rutas lazy pueden re-montar el formulario justo tras cargar.
   Los tests no dependen de datos aleatorios del seed. CI corre el job `e2e` tras `api` y `web`.
 
 ### Servicio IA (apps/ai)
@@ -167,9 +168,10 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 ```bash
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
-make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, ~90 días de compras, ventas y cobros; admin@ccp.test / password)
+make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, 15 proveedores, ~90 días de OC/recepciones, ventas, cobros y pagos; admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
 make e2e       # Playwright contra el stack levantado (fixtures: php artisan e2e:prepare)
+make screenshots # regenera docs/screenshots con Playwright (proyecto opcional CAPTURE=1)
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
 make logs      # logs de todos los servicios
