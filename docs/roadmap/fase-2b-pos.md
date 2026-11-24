@@ -1,8 +1,6 @@
 # Fase 2b — POS (punto de venta de mostrador)
 
-- **Estado:** planificado, no iniciado. No hubo margen en la sesión de la Fase 2; lo ya construido
-  (motor de ventas, cliente genérico S/N, cobro automático) cubre todo el backend necesario.
-- **Rama sugerida:** `feat/pos` (desde `main`, con los PR #3 y #4 mergeados).
+- **Estado:** ✅ implementado en `feat/pos` (PR #6). Ver «Implementación» al final.
 
 ## Objetivo
 
@@ -64,3 +62,20 @@ carrito, suma una unidad.
 ## Estimación
 
 ≈ 1 sesión. Backend ½ día, frontend 1 día y tests ½ día.
+
+## Implementación (decisiones finales)
+
+| Tema | Decisión |
+|---|---|
+| Endpoint | `POST /api/v1/pos/sales` (`PosCheckout`): cliente → `SaveSalesDraft` → `PostSalesDocument` en **una** transacción. `Idempotency-Key` obligatoria; una carrera con la misma clave devuelve la venta ganadora. |
+| Pagos mixtos | `PostSalesDocument` acepta `tenders`: un cobro automático (COB-) por medio de pago, que deben sumar el total (`ReceiptWriter::collectCashSale`). `VoidSalesDocument` anula todos. El POS envía lo **entregado**; el efectivo cubre el resto y el exceso es cambio (`cash_received`, `change_amount`, `channel = pos`). |
+| Cliente rápido | `GET /pos/customers/lookup?document=` (NIT primero). Un NIT/CI desconocido se crea al cobrar con datos mínimos (contado, sin crédito, minorista) y requiere `customers.manage`. Vacío = cliente por defecto S/N. |
+| Tipo de documento | NIT/CI → Factura por defecto; S/N → Nota de venta; el cajero puede cambiarlo. |
+| Catálogo | `GET /pos/catalog?warehouse_id=` compacto (precio + stock del almacén), cacheado 5 min con TanStack Query e invalidado tras cada venta. Búsqueda e índice de códigos **locales** (`lib/search.ts`). |
+| Lector | `lib/scanner.ts`: ráfaga de teclas con < 35 ms entre ellas, ≥ 4 caracteres y Enter; se detecta en fase de captura aunque el foco esté en la búsqueda. |
+| Descuento por línea | Solo con `sales.authorize_below_cost` (gerente/admin); el motor exige autorización si queda bajo costo o mínimo. |
+| Almacén | `users.pos_warehouse_id` (`PATCH /pos/preferences`). |
+| Permisos | `sales.create` + `sales.post` (policy `SalesDocumentPolicy::pos`). |
+| Ticket | `/pos/ticket/:id`: 80 mm, logo monocromo, importe en letras, pagos, efectivo recibido y cambio. |
+| Tests | Pest `PosCheckoutTest` (8), Vitest `features/pos/lib` (16), E2E `e2e/tests/pos.spec.ts`. |
+

@@ -136,6 +136,9 @@ docs/      architecture.md y ADRs (docs/adr/)
     Crédito se valida antes del SAL-; precio bajo costo/mínimo después (necesita el costo real). Excepciones solo con
     `sales.authorize_below_cost` / `sales.override_credit_limit` + motivo (auditado). Costos y márgenes en la API solo
     con `sales.view_margin`; saldos y deuda solo con `receivables.view`.
+10b. **POS (Fase 2b):** `PosCheckout` no contiene reglas de negocio: orquesta `SaveSalesDraft` + `PostSalesDocument`
+    en una transacción (Idempotency-Key obligatoria). Pagos mixtos = `tenders` de `PostSalesDocument` (un COB- automático por
+    medio; deben sumar el total); el efectivo entregado y el cambio viven en `sales_documents.cash_received/change_amount`.
 11. **Cuentas por cobrar:** `customer_ledger_entries` inmutable (`charge` +, `payment` −, `reversal`), escrito solo por
     `CustomerLedger`; `customers.balance` y `sales_documents.paid_amount` son cachés. `php artisan customers:verify [--repair]`.
     La fecha de cualquier documento respeta `DocumentDateWindow` (Shared).
