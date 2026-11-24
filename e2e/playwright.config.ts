@@ -31,5 +31,22 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: '.auth/admin.json' },
       dependencies: ['setup'],
     },
+    // README captures (docs/screenshots): only with CAPTURE=1, never in CI.
+    ...(process.env.CAPTURE
+      ? [
+          {
+            name: 'screenshots',
+            testDir: './screenshots',
+            testMatch: /\.capture\.ts$/,
+            use: {
+              ...devices['Desktop Chrome'],
+              viewport: { width: 1440, height: 900 },
+              colorScheme: 'dark' as const,
+              storageState: '.auth/admin.json',
+            },
+            dependencies: ['setup'],
+          },
+        ]
+      : []),
   ],
 })

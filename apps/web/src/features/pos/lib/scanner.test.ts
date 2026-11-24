@@ -2,7 +2,12 @@ import type { PosProduct } from '../types'
 import { createScannerDetector } from './scanner'
 import { buildProductIndex, normalize } from './search'
 
-const type = (detector: ReturnType<typeof createScannerDetector>, text: string, start: number, gap: number) => {
+const type = (
+  detector: ReturnType<typeof createScannerDetector>,
+  text: string,
+  start: number,
+  gap: number,
+) => {
   let t = start
   let result: string | null = null
   for (const ch of [...text, 'Enter']) {

@@ -39,6 +39,8 @@ const SalesDocumentsPage = page(
 const SalesDocumentPage = page(() => import('@/features/sales/pages/SalesDocumentPage'), 'SalesDocumentPage')
 const SalesPrintPage = page(() => import('@/features/sales/pages/SalesPrintPage'), 'SalesPrintPage')
 const PaymentsPage = page(() => import('@/features/sales/pages/PaymentsPage'), 'PaymentsPage')
+const PosPage = page(() => import('@/features/pos/pages/PosPage'), 'PosPage')
+const PosTicketPage = page(() => import('@/features/pos/pages/PosTicketPage'), 'PosTicketPage')
 const AtlasPage = page(() => import('@/features/atlas/pages/AtlasPage'), 'AtlasPage')
 const SettingsPage = page(() => import('@/features/settings/pages/SettingsPage'), 'SettingsPage')
 
@@ -64,6 +66,22 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     errorElement: <RouteErrorPage />,
     children: [
+      {
+        // Counter sale: full screen, outside the app shell. Needs sales.create + sales.post.
+        path: 'pos',
+        element: <RequirePermission permission="sales.create" />,
+        children: [
+          {
+            element: <RequirePermission permission="sales.post" />,
+            children: [{ index: true, element: withSuspense(<PosPage />, <FullScreenLoader />) }],
+          },
+        ],
+      },
+      {
+        path: 'pos/ticket/:id',
+        element: <RequirePermission permission="sales.view" />,
+        children: [{ index: true, element: withSuspense(<PosTicketPage />, <FullScreenLoader />) }],
+      },
       {
         path: 'ventas/documentos/:id/imprimir',
         element: <RequirePermission permission="sales.view" />,

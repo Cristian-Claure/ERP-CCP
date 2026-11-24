@@ -23,7 +23,10 @@ describe('POS payments', () => {
       excessNonCash: 5,
       valid: false,
     })
-    expect(summarizePayments(40, [{ method: 'card', amount: '40' }])).toMatchObject({ change: 0, valid: true })
+    expect(summarizePayments(40, [{ method: 'card', amount: '40' }])).toMatchObject({
+      change: 0,
+      valid: true,
+    })
   })
 
   it('is exact to the cent (no float drift)', () => {

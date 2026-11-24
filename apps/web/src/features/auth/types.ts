@@ -22,6 +22,8 @@ export interface AuthUser {
   company: Company
   roles: string[]
   permissions: string[]
+  /** Warehouse the POS opens with (per-user preference). */
+  pos_warehouse_id: number | null
   last_login_at: string | null
 }
 

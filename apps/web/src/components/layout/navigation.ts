@@ -1,4 +1,5 @@
 import {
+  ScanBarcode,
   BrainCircuit,
   Boxes,
   ChartLine,
@@ -97,6 +98,13 @@ export const navigation: NavSection[] = [
             href: '/ventas/documentos',
             icon: FileText,
             keywords: ['factura', 'nota de venta', 'cotización'],
+          },
+          {
+            title: 'Punto de venta',
+            href: '/pos',
+            icon: ScanBarcode,
+            permission: 'sales.create',
+            keywords: ['pos', 'caja', 'mostrador', 'ticket', 'código de barras'],
           },
           {
             title: 'Clientes',

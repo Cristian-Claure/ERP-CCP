@@ -4,7 +4,7 @@ import type { PosProduct } from '../types'
 export const normalize = (s: string) =>
   s
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 
 interface Entry {

@@ -6,7 +6,7 @@ WEB     := $(COMPOSE) exec -T web
 
 .DEFAULT_GOAL := help
 .PHONY: help env up down restart build fresh migrate test test-api test-ai test-web \
-        lint lint-api lint-ai lint-web format logs ps sh-api e2e
+        lint lint-api lint-ai lint-web format logs ps sh-api e2e screenshots
 
 help: ## Show available commands
 	@echo "make env | up | down | restart | fresh | migrate | test | e2e | lint | format | logs | ps | sh-api"
@@ -45,6 +45,10 @@ test-web:
 e2e: ## End-to-end tests (Playwright) against the running stack
 	$(API) php artisan e2e:prepare
 	$(COMPOSE) --profile e2e run --rm e2e
+
+screenshots: ## Regenerate the README captures (docs/screenshots) with Playwright
+	$(API) php artisan e2e:prepare
+	$(COMPOSE) --profile e2e run --rm -e CAPTURE=1 e2e sh -c "npm ci --no-audit --no-fund --loglevel=error && npx playwright test --project=screenshots"
 
 lint: lint-api lint-ai lint-web ## Run every linter
 

@@ -31,6 +31,7 @@ const user: AuthUser = {
   },
   roles: ['vendedor'],
   permissions: ['dashboard.view', 'inventory.view', 'sales.view'],
+  pos_warehouse_id: null,
   last_login_at: null,
 }
 

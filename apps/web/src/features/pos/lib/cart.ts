@@ -57,7 +57,11 @@ export function stepQuantity(cart: CartLine[], index: number, delta: 1 | -1): Ca
   return (toScaled(next, 4) ?? 0n) > 0n ? setQuantity(cart, index, next) : cart
 }
 
-export function setLine(cart: CartLine[], index: number, patch: Partial<Pick<CartLine, 'unitPrice' | 'discount'>>) {
+export function setLine(
+  cart: CartLine[],
+  index: number,
+  patch: Partial<Pick<CartLine, 'unitPrice' | 'discount'>>,
+) {
   return cart.map((l, i) => (i === index ? { ...l, ...patch } : l))
 }
 

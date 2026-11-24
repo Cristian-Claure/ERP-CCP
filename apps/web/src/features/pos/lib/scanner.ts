@@ -16,7 +16,10 @@ export interface ScannerDetector {
   reset: () => void
 }
 
-export function createScannerDetector({ maxInterval = 35, minLength = 4 }: ScannerOptions = {}): ScannerDetector {
+export function createScannerDetector({
+  maxInterval = 35,
+  minLength = 4,
+}: ScannerOptions = {}): ScannerDetector {
   let buffer = ''
   let last = -Infinity
 
