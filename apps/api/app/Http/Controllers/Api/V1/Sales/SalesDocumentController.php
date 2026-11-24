@@ -31,7 +31,7 @@ class SalesDocumentController extends Controller
 {
     use PaginatesRequests;
 
-    private const DETAIL_RELATIONS = [
+    public const DETAIL_RELATIONS = [
         'lines.product.unit', 'customer', 'warehouse', 'quote', 'conversions', 'inventoryDocument',
         'allocations.payment', 'creator', 'poster', 'voider', 'belowCostAuthorizer', 'creditOverrider',
     ];

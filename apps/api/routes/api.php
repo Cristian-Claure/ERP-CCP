@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Inventory\DocumentController;
 use App\Http\Controllers\Api\V1\Inventory\InventoryOverviewController;
 use App\Http\Controllers\Api\V1\Inventory\KardexController;
 use App\Http\Controllers\Api\V1\Inventory\ProductController;
+use App\Http\Controllers\Api\V1\Pos\PosController;
 use App\Http\Controllers\Api\V1\Sales\CustomerController;
 use App\Http\Controllers\Api\V1\Sales\PaymentController;
 use App\Http\Controllers\Api\V1\Sales\SalesDocumentController;
@@ -83,6 +84,13 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             Route::post('documents/{document}/post', [SalesDocumentController::class, 'post'])->name('documents.post');
             Route::post('documents/{document}/void', [SalesDocumentController::class, 'void'])->name('documents.void');
             Route::post('documents/{document}/convert', [SalesDocumentController::class, 'convert'])->name('documents.convert');
+        });
+
+        Route::prefix('pos')->name('pos.')->group(function (): void {
+            Route::get('catalog', [PosController::class, 'catalog'])->name('catalog');
+            Route::get('customers/lookup', [PosController::class, 'lookupCustomer'])->name('customers.lookup');
+            Route::post('sales', [PosController::class, 'checkout'])->name('sales.store');
+            Route::patch('preferences', [PosController::class, 'preferences'])->name('preferences');
         });
 
         Route::prefix('receivables')->name('receivables.')->group(function (): void {

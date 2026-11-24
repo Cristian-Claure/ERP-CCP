@@ -99,15 +99,16 @@ class VoidSalesDocument
 
         $today = $this->dates->today($customer->company()->firstOrFail());
 
-        // 1. The automatic receipt of a cash sale goes with it.
+        // 1. The automatic receipt(s) of a cash sale go with it (one per tender in mixed payments).
         $automatic = CustomerPayment::query()
             ->where('sales_document_id', $doc->id)
             ->where('status', PaymentStatus::Posted)
+            ->orderBy('id')
             ->lockForUpdate()
-            ->first();
+            ->get();
 
-        if ($automatic !== null) {
-            $this->receipts->void($customer, $automatic, $today, $actor, "Anulación de {$doc->number}: {$reason}");
+        foreach ($automatic as $receipt) {
+            $this->receipts->void($customer, $receipt, $today, $actor, "Anulación de {$doc->number}: {$reason}");
         }
 
         // 2. The stock exit, at its original cost. Any failure aborts the whole void.

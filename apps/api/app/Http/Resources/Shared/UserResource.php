@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'pos_warehouse_id' => $this->pos_warehouse_id,
             'company' => CompanyResource::make($this->whenLoaded('company')),
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')->values()),
             'permissions' => $this->whenLoaded('roles', fn () => $this->getAllPermissions()->pluck('name')->sort()->values()),
