@@ -6,6 +6,7 @@ use App\Domain\Sales\Data\LineAmounts;
 use App\Domain\Sales\Data\SalesTotals;
 use App\Domain\Sales\Exceptions\InvalidSalesDocumentException;
 use App\Domain\Shared\Support\Decimal;
+use App\Domain\Shared\Support\Vat;
 use BcMath\Number;
 
 /**
@@ -15,13 +16,13 @@ use BcMath\Number;
  * Per line: gross = round(qty × price) − line discount.
  * The global discount is prorated over the gross amounts (residual to the
  * last line) so every line knows its exact total and margin.
- * Prices INCLUDE VAT: vat = round(total × 13 %), distributed over the line
- * totals with the same prorating (residual to the last line), so
- * Σ line VAT == document VAT exactly. net = total − vat.
+ * Prices INCLUDE VAT ("por dentro", Shared\Support\Vat): vat = round(total × 13 %),
+ * distributed over the line totals with the same prorating (residual to the
+ * last line), so Σ line VAT == document VAT exactly. net = total − vat.
  */
 final class SalesCalculator
 {
-    public const VAT_RATE = '0.13';
+    public const VAT_RATE = Vat::RATE;
 
     /**
      * @param  list<array{quantity: string, unit_price: string, discount_amount: ?string}>  $lines
@@ -63,8 +64,7 @@ final class SalesCalculator
         $totals = array_map(fn (Number $gross, Number $share) => $gross - $share, $grosses, $shares);
         $total = $grossTotal - $global;
 
-        $vat = $breakDownVat ? ($total * new Number(self::VAT_RATE))->round(2) : new Number('0');
-        $vats = Decimal::prorate($vat, $totals);
+        ['vat' => $vat, 'lines' => $vats] = Vat::split($totals, $breakDownVat);
 
         $lineAmounts = [];
         foreach ($grosses as $i => $gross) {
