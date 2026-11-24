@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { motion } from 'motion/react'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router'
 import { useNavigate } from 'react-router'
@@ -42,23 +42,25 @@ export function AppShell() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(99_102_241/0.08),transparent)]"
           />
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className={
-                // Immersive pages (CCP Atlas) use the whole area below the top bar.
-                FULL_BLEED.some((p) => location.pathname.startsWith(p))
-                  ? 'relative h-[calc(100dvh-4rem)] w-full overflow-hidden'
-                  : 'relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8'
-              }
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          {/*
+            Enter-only transition. An exit animation (AnimatePresence mode="wait") kept the
+            leaving container alive while its live <Outlet/> already rendered the NEXT route,
+            so every page mounted twice and lost whatever the user typed in that window.
+          */}
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className={
+              // Immersive pages (CCP Atlas) use the whole area below the top bar.
+              FULL_BLEED.some((p) => location.pathname.startsWith(p))
+                ? 'relative h-[calc(100dvh-4rem)] w-full overflow-hidden'
+                : 'relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8'
+            }
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
       <CommandPalette />
