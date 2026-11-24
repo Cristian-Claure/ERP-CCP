@@ -16,7 +16,7 @@ test('POS: escaneo, pago mixto con cambio y ticket', async ({ page }) => {
   const catalog = page.waitForResponse((r) => r.url().includes('/api/v1/pos/catalog'))
   await page.getByRole('combobox', { name: 'Almacén del punto de venta' }).click()
   await page.getByRole('option', { name: 'Central Santa Cruz' }).click()
-  // Wait for the catalog before scanning (in dev the page may re-mount right after loading).
+  // Wait for the catalog before scanning.
   await catalog
   await page.waitForLoadState('networkidle')
 

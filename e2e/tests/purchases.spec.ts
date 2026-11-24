@@ -23,7 +23,7 @@ test('compras: OC, aprobación, recepción parcial con flete, pago', async ({ pa
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^OC-\d+/)
   const orderNumber = (await page.getByRole('heading', { level: 1 }).textContent())!.trim()
 
-  // Wait for the form's own data before typing (in dev the page may re-mount right after loading).
+  // Wait for the form's own data before typing.
   const settled = page.waitForResponse((r) => r.url().includes('/api/v1/settings/purchases'))
   await page.getByRole('link', { name: 'Recibir mercadería' }).click()
   await settled
