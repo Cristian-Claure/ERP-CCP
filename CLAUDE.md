@@ -93,7 +93,9 @@ docs/      architecture.md y ADRs (docs/adr/)
 - Playwright (`@playwright/test`, imagen oficial `mcr.microsoft.com/playwright`, perfil compose `e2e`).
   Un reenviador TCP mantiene los orígenes `localhost:5173/8000`, así las cookies de Sanctum funcionan igual.
 - Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido y «Proveedor E2E SRL»; solo local/testing).
-- Esperar los datos de la página antes de escribir (`waitForResponse`): en dev, StrictMode + rutas lazy pueden re-montar el formulario justo tras cargar.
+- Esperar los datos de la página antes de interactuar (`waitForResponse`) en vez de `waitForTimeout`.
+- `AppShell` anima solo la entrada de cada página: una animación de salida con `AnimatePresence` montaba la página
+  nueva dos veces (el contenedor saliente tenía un `<Outlet/>` vivo) y se perdía lo escrito. No reintroducirla así.
   Los tests no dependen de datos aleatorios del seed. CI corre el job `e2e` tras `api` y `web`.
 
 ### Servicio IA (apps/ai)
