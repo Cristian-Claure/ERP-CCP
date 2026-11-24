@@ -32,6 +32,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
+    /** Defaults for columns not set on create (strict mode forbids reading missing attributes). */
+    protected $attributes = [
+        'pos_warehouse_id' => null,
+    ];
+
     protected static function booted(): void
     {
         static::addGlobalScope(new CompanyMemberScope);
