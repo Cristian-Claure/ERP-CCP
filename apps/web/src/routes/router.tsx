@@ -41,6 +41,23 @@ const SalesPrintPage = page(() => import('@/features/sales/pages/SalesPrintPage'
 const PaymentsPage = page(() => import('@/features/sales/pages/PaymentsPage'), 'PaymentsPage')
 const PosPage = page(() => import('@/features/pos/pages/PosPage'), 'PosPage')
 const PosTicketPage = page(() => import('@/features/pos/pages/PosTicketPage'), 'PosTicketPage')
+const SuppliersPage = page(() => import('@/features/purchases/pages/SuppliersPage'), 'SuppliersPage')
+const PurchaseOrdersPage = page(
+  () => import('@/features/purchases/pages/PurchaseOrdersPage'),
+  'PurchaseOrdersPage',
+)
+const PurchaseOrderPage = page(
+  () => import('@/features/purchases/pages/PurchaseOrderPage'),
+  'PurchaseOrderPage',
+)
+const ReceiveOrderPage = page(() => import('@/features/purchases/pages/ReceiveOrderPage'), 'ReceiveOrderPage')
+const ReceiptsPage = page(() => import('@/features/purchases/pages/ReceiptsPage'), 'ReceiptsPage')
+const ReceiptPage = page(() => import('@/features/purchases/pages/ReceiptPage'), 'ReceiptPage')
+const SupplierPaymentsPage = page(
+  () => import('@/features/purchases/pages/SupplierPaymentsPage'),
+  'SupplierPaymentsPage',
+)
+const SuggestionsPage = page(() => import('@/features/purchases/pages/SuggestionsPage'), 'SuggestionsPage')
 const AtlasPage = page(() => import('@/features/atlas/pages/AtlasPage'), 'AtlasPage')
 const SettingsPage = page(() => import('@/features/settings/pages/SettingsPage'), 'SettingsPage')
 
@@ -49,7 +66,7 @@ const withSuspense = (node: ReactNode, fallback: ReactNode = <PageSkeleton />) =
 )
 
 /** Paths with a real page; every other navigation entry shows "coming soon". */
-const IMPLEMENTED = ['/', '/inventario', '/ventas', '/atlas', '/sistema/configuracion']
+const IMPLEMENTED = ['/', '/inventario', '/ventas', '/compras', '/atlas', '/sistema/configuracion']
 
 const placeholderRoutes = navigation
   .flatMap((section) => section.items)
@@ -123,6 +140,28 @@ export const router = createBrowserRouter([
               {
                 element: <RequirePermission permission="receivables.view" />,
                 children: [{ path: 'cobros', element: withSuspense(<PaymentsPage />) }],
+              },
+            ],
+          },
+          {
+            path: 'compras',
+            element: <RequirePermission permission="purchases.view" />,
+            children: [
+              { index: true, element: <Navigate to="ordenes" replace /> },
+              { path: 'ordenes', element: withSuspense(<PurchaseOrdersPage />) },
+              { path: 'ordenes/nueva', element: withSuspense(<PurchaseOrderPage />) },
+              { path: 'ordenes/:id', element: withSuspense(<PurchaseOrderPage />) },
+              { path: 'ordenes/:id/recibir', element: withSuspense(<ReceiveOrderPage />) },
+              { path: 'recepciones', element: withSuspense(<ReceiptsPage />) },
+              { path: 'recepciones/:id', element: withSuspense(<ReceiptPage />) },
+              { path: 'sugerencias', element: withSuspense(<SuggestionsPage />) },
+              {
+                element: <RequirePermission permission="suppliers.view" />,
+                children: [{ path: 'proveedores', element: withSuspense(<SuppliersPage />) }],
+              },
+              {
+                element: <RequirePermission permission="payables.view" />,
+                children: [{ path: 'pagos', element: withSuspense(<SupplierPaymentsPage />) }],
               },
             ],
           },

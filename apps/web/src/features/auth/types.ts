@@ -10,6 +10,8 @@ export interface Company {
   sales_note_vat_breakdown: boolean
   quote_validity_days: number
   default_customer_id: number | null
+  /** OCs above it need purchases.approve and someone other than their creator. */
+  purchase_approval_threshold?: string
   email: string | null
   phone: string | null
   address: string | null
