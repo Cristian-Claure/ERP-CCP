@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useAuth } from '@/features/auth/hooks'
 import { cn } from 'cn'
 
 import { SEGMENT_COLORS, STATUS_COLORS } from '../lib/colors'
@@ -34,6 +35,7 @@ interface ToolbarProps {
 
 /** Search with camera flight, filters, layers, mode and tour. */
 export function AtlasToolbar({ customers, withReceivables, reducedMotion, onShowMap }: ToolbarProps) {
+  const canSuppliers = useAuth().can('suppliers.view')
   const s = useAtlasStore()
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -154,6 +156,7 @@ export function AtlasToolbar({ customers, withReceivables, reducedMotion, onShow
             {(
               [
                 ['showArcs', 'Arcos almacén → cliente'],
+                ...(canSuppliers ? ([['showSuppliers', 'Proveedores y arcos de compra']] as const) : []),
                 ['showBorders', 'Fronteras y departamentos'],
                 ['showClouds', 'Nubes'],
               ] as const

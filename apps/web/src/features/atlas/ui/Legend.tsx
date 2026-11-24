@@ -8,6 +8,7 @@ import { panel } from './AtlasHud'
 export function Legend({ byStatus }: { byStatus: boolean }) {
   const mode = useAtlasStore((s) => s.mode)
   const showArcs = useAtlasStore((s) => s.showArcs)
+  const showSuppliers = useAtlasStore((s) => s.showSuppliers)
   const hoverCountry = useAtlasStore((s) => s.hoverCountry)
   const entries = byStatus ? Object.values(STATUS_COLORS) : Object.values(SEGMENT_COLORS)
 
@@ -50,6 +51,15 @@ export function Legend({ byStatus }: { byStatus: boolean }) {
         <p className="mt-2 hidden items-center gap-1.5 text-muted-foreground sm:flex">
           <span className="h-px w-5 bg-gradient-to-r from-brand-accent to-indigo-300" /> Almacén → cliente
           <span className="ml-1 size-2 rotate-45 bg-white" aria-label="almacén" />
+        </p>
+      )}
+      {showSuppliers && (
+        <p className="mt-1 hidden items-center gap-1.5 text-muted-foreground sm:flex">
+          <span className="h-px w-5 bg-gradient-to-r from-amber-500 to-amber-200" /> Proveedor → almacén
+          <span
+            className="ml-1 size-0 border-x-[5px] border-b-[8px] border-x-transparent border-b-amber-500"
+            aria-label="proveedor"
+          />
         </p>
       )}
       {hoverCountry && <p className="mt-2 border-t pt-2 font-medium text-brand-accent">{hoverCountry}</p>}
