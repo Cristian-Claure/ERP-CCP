@@ -143,6 +143,19 @@ docs/      architecture.md y ADRs (docs/adr/)
     `CustomerLedger`; `customers.balance` y `sales_documents.paid_amount` son cachés. `php artisan customers:verify [--repair]`.
     La fecha de cualquier documento respeta `DocumentDateWindow` (Shared).
 
+12. **Compras (ADR 0006):** `PostPurchaseReceipt` / `VoidPurchaseReceipt` crean y anulan la ENT- **solo** con las Actions
+    de inventario (`source = purchase_receipt`). La recepción es también la factura del proveedor (número único por
+    proveedor). Costo de entrada con `PurchaseCostCalculator`: con factura, IVA **por dentro** (`Shared\Support\Vat`,
+    `total × 0,13`, igual que ventas) como crédito fiscal y costo = neto; sin factura, costo = total pagado; gastos
+    adicionales prorrateados por valor (residuo a la última línea). **Orden de bloqueos: proveedor → OC → recepción →
+    saldos de stock.** OC por encima de `purchase_approval_threshold` exige `purchases.approve` y otra persona que su
+    creador (`self_approval_not_allowed`). Sobre-recepción solo dentro de `purchase_receipt_tolerance_pct`.
+13. **Cuentas por pagar:** `supplier_ledger_entries` inmutable, escrito solo por `SupplierLedger`; `suppliers.balance`,
+    `purchase_receipts.paid_amount` y `purchase_order_lines.received_quantity` son cachés.
+    `php artisan suppliers:verify [--repair]`. Saldos y antigüedad solo con `payables.view`.
+14. **Sugerencia de compra:** depender de `PurchaseSuggestionProvider` (nunca de la implementación); la Fase 5 cambia el
+    binding por el pronóstico de IA.
+
 ### CCP Atlas (apps/web/src/features/atlas)
 
 - Escena a medida con `three` + `@react-three/fiber` (sin drei). Shaders GLSL en `shaders/*.glsl` (`?raw`).
