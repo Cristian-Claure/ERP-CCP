@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\V1\Inventory\InventoryOverviewController;
 use App\Http\Controllers\Api\V1\Inventory\KardexController;
 use App\Http\Controllers\Api\V1\Inventory\ProductController;
 use App\Http\Controllers\Api\V1\Pos\PosController;
+use App\Http\Controllers\Api\V1\Purchases\PayablesController;
+use App\Http\Controllers\Api\V1\Purchases\PurchaseOrderController;
+use App\Http\Controllers\Api\V1\Purchases\PurchaseReceiptController;
+use App\Http\Controllers\Api\V1\Purchases\PurchasesOverviewController;
+use App\Http\Controllers\Api\V1\Purchases\SupplierController;
 use App\Http\Controllers\Api\V1\Sales\CustomerController;
 use App\Http\Controllers\Api\V1\Sales\PaymentController;
 use App\Http\Controllers\Api\V1\Sales\SalesDocumentController;
@@ -20,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Model ids are numeric: anything else is a 404, never a database error.
-foreach (['product', 'warehouse', 'document', 'customer', 'payment'] as $parameter) {
+foreach (['product', 'warehouse', 'document', 'customer', 'payment', 'supplier', 'order', 'receipt'] as $parameter) {
     Route::pattern($parameter, '[0-9]+');
 }
 
@@ -92,6 +97,41 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
             Route::post('sales', [PosController::class, 'checkout'])->name('sales.store');
             Route::patch('preferences', [PosController::class, 'preferences'])->name('preferences');
         });
+
+        Route::prefix('purchases')->name('purchases.')->group(function (): void {
+            Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+            Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+            Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+            Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+            Route::get('suppliers/{supplier}/statement', [SupplierController::class, 'statement'])->name('suppliers.statement');
+
+            Route::get('orders', [PurchaseOrderController::class, 'index'])->name('orders.index');
+            Route::post('orders', [PurchaseOrderController::class, 'store'])->name('orders.store');
+            Route::get('orders/{order}', [PurchaseOrderController::class, 'show'])->name('orders.show');
+            Route::put('orders/{order}', [PurchaseOrderController::class, 'update'])->name('orders.update');
+            Route::post('orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('orders.approve');
+            Route::post('orders/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('orders.cancel');
+            Route::post('orders/{order}/receipts', [PurchaseOrderController::class, 'receive'])->name('orders.receive');
+
+            Route::get('receipts', [PurchaseReceiptController::class, 'index'])->name('receipts.index');
+            Route::get('receipts/{receipt}', [PurchaseReceiptController::class, 'show'])->name('receipts.show');
+            Route::post('receipts/{receipt}/void', [PurchaseReceiptController::class, 'void'])->name('receipts.void');
+
+            Route::get('suggestions', [PurchasesOverviewController::class, 'suggestions'])->name('suggestions.index');
+            Route::post('suggestions/orders', [PurchasesOverviewController::class, 'createOrder'])->name('suggestions.orders');
+        });
+
+        Route::prefix('payables')->name('payables.')->group(function (): void {
+            Route::get('summary', [PayablesController::class, 'summary'])->name('summary');
+            Route::get('payments', [PayablesController::class, 'index'])->name('payments.index');
+            Route::post('payments', [PayablesController::class, 'store'])->name('payments.store');
+            Route::get('payments/{payment}', [PayablesController::class, 'show'])->name('payments.show');
+            Route::post('payments/{payment}/void', [PayablesController::class, 'void'])->name('payments.void');
+        });
+
+        Route::get('dashboard/purchases', [PurchasesOverviewController::class, 'dashboard'])->name('dashboard.purchases');
+        Route::get('settings/purchases', [PurchasesOverviewController::class, 'settings'])->name('settings.purchases');
+        Route::patch('settings/purchases', [PurchasesOverviewController::class, 'updateSettings'])->name('settings.purchases.update');
 
         Route::prefix('receivables')->name('receivables.')->group(function (): void {
             Route::get('summary', [SalesOverviewController::class, 'receivables'])->name('summary');
