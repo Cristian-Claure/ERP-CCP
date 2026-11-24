@@ -127,6 +127,26 @@ services:
       start_period: 240s
     restart: unless-stopped
 
+  # End-to-end tests (Playwright). Only runs on demand: `make e2e`.
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.65.1-noble
+    profiles: ["e2e"]
+    working_dir: /e2e
+    environment:
+      CI: ${CI:-}
+      E2E_FORWARD: "5173=web:5173,8000=nginx:80"
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    volumes:
+      - ./e2e:/e2e
+      - e2e_node_modules:/e2e/node_modules
+    command: ["sh", "-c", "npm ci --no-audit --no-fund --loglevel=error && npx playwright test"]
+    ipc: host
+    depends_on:
+      web:
+        condition: service_healthy
+      nginx:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:latest
     healthcheck:
@@ -140,3 +160,4 @@ volumes:
   pgdata:
   redisdata:
   web_node_modules:
+  e2e_node_modules:
