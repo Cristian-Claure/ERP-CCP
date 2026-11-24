@@ -49,9 +49,13 @@ export function PosPage() {
 
   const onScan = useCallback(
     (code: string) => {
-      const product = catalog.index.byCode(code)
+      // A lag spike can split a burst: the detector then reports only its tail, but every
+      // keystroke also reached the focused search box, which holds the whole code.
+      const typed = searchRef.current?.value.trim() ?? ''
+      const product =
+        catalog.index.byCode(code) ?? (typed.endsWith(code) ? catalog.index.byCode(typed) : undefined)
       if (product) add(product)
-      else toast.error(`Código ${code} no encontrado`)
+      else toast.error(`Código ${typed.endsWith(code) ? typed : code} no encontrado`)
       setTerm('')
     },
     [catalog.index, add],

@@ -77,3 +77,16 @@ describe('local product search', () => {
     expect(index.search('BEB-001')[0].id).toBe(3)
   })
 })
+
+describe('barcode scanner under load', () => {
+  it('reports the tail of a burst split by a lag spike (the page completes it from the search box)', () => {
+    const d = createScannerDetector()
+    const code = '7790000000011'
+    let t = 0
+    for (const [i, ch] of [...code].entries()) {
+      d.feed(ch, t)
+      t += i === 5 ? 120 : 8 // one 120 ms stall in the middle
+    }
+    expect(d.feed('Enter', t)).toBe(code.slice(6))
+  })
+})

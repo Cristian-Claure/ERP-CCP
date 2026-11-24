@@ -5,7 +5,7 @@
  * buffer as a scan when it is long enough and every gap was below the limit.
  */
 export interface ScannerOptions {
-  /** Max ms between two keystrokes of the same scan (readers: ~5–30 ms). */
+  /** Max ms between two keystrokes of the same scan (readers: ~5–30 ms; humans: 100+ ms). */
   maxInterval?: number
   minLength?: number
 }
@@ -17,7 +17,7 @@ export interface ScannerDetector {
 }
 
 export function createScannerDetector({
-  maxInterval = 35,
+  maxInterval = 50,
   minLength = 4,
 }: ScannerOptions = {}): ScannerDetector {
   let buffer = ''

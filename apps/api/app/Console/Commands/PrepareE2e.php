@@ -10,6 +10,7 @@ use App\Domain\Inventory\Models\ProductCategory;
 use App\Domain\Inventory\Models\StockBalance;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Models\Warehouse;
+use App\Domain\Purchases\Models\Supplier;
 use App\Domain\Shared\Models\Company;
 use App\Domain\Shared\Models\User;
 use App\Domain\Shared\Tenancy\RunsInCompanyContext;
@@ -18,7 +19,8 @@ use Illuminate\Console\Command;
 
 /**
  * Idempotent fixtures for the Playwright suite (never available in production):
- * dedicated E2E products with known cost and enough stock in the Central warehouse.
+ * dedicated E2E products with known cost and enough stock in the Central warehouse,
+ * and an invoicing E2E supplier (30-day terms) for the purchases flow.
  * Stock is topped up through the real inventory engine (ENT-), never edited.
  */
 #[AsCommand(name: 'e2e:prepare')]
@@ -54,6 +56,11 @@ class PrepareE2e extends Command
             $warehouse = Warehouse::query()->where('code', 'CEN')->firstOrFail();
             $unit = Unit::query()->where('code', 'UND')->firstOrFail();
             $category = ProductCategory::query()->firstOrCreate(['name' => 'Pruebas E2E'], ['is_active' => true]);
+            Supplier::query()->updateOrCreate(['tax_id' => 'E2E-PROV-1'], [
+                'name' => 'Proveedor E2E SRL', 'country' => 'BO', 'city' => 'Santa Cruz de la Sierra',
+                'latitude' => '-17.770000', 'longitude' => '-63.160000', 'payment_terms_days' => 30,
+                'lead_time_days' => 2, 'issues_invoice' => true, 'is_active' => true,
+            ]);
 
             $lines = [];
             foreach (self::PRODUCTS as [$sku, $name, $barcode, $cost, $price]) {
