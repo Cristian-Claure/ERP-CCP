@@ -5,6 +5,10 @@ namespace App\Domain\Shared;
 use App\Domain\Inventory\Models\InventoryDocument;
 use App\Domain\Inventory\Models\Product;
 use App\Domain\Inventory\Models\Warehouse;
+use App\Domain\Purchases\Models\PurchaseOrder;
+use App\Domain\Purchases\Models\PurchaseReceipt;
+use App\Domain\Purchases\Models\Supplier;
+use App\Domain\Purchases\Models\SupplierPayment;
 use App\Domain\Sales\Models\Customer;
 use App\Domain\Sales\Models\CustomerPayment;
 use App\Domain\Sales\Models\SalesDocument;
@@ -29,5 +33,9 @@ final class MorphMap
         'customer' => Customer::class,
         'sales_document' => SalesDocument::class,
         'customer_payment' => CustomerPayment::class,
+        'supplier' => Supplier::class,
+        'purchase_order' => PurchaseOrder::class,
+        'purchase_receipt' => PurchaseReceipt::class,
+        'supplier_payment' => SupplierPayment::class,
     ];
 }

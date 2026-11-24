@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'legal_name', 'tax_id', 'currency', 'timezone', 'allow_negative_stock', 'document_backdate_days', 'sales_note_vat_breakdown', 'quote_validity_days', 'default_customer_id', 'email', 'phone', 'address', 'is_active'])]
+#[Fillable(['name', 'legal_name', 'tax_id', 'currency', 'timezone', 'allow_negative_stock', 'document_backdate_days', 'sales_note_vat_breakdown', 'quote_validity_days', 'purchase_approval_threshold', 'purchase_receipt_tolerance_pct', 'purchase_price_variance_pct', 'default_customer_id', 'email', 'phone', 'address', 'is_active'])]
 #[UseFactory(CompanyFactory::class)]
 class Company extends Model
 {
@@ -25,6 +25,9 @@ class Company extends Model
             'document_backdate_days' => 'integer',
             'sales_note_vat_breakdown' => 'boolean',
             'quote_validity_days' => 'integer',
+            'purchase_approval_threshold' => 'decimal:2',
+            'purchase_receipt_tolerance_pct' => 'decimal:2',
+            'purchase_price_variance_pct' => 'decimal:2',
         ];
     }
 

@@ -21,7 +21,10 @@ class RolesAndPermissionsSeeder extends Seeder
         'sales.view', 'sales.create', 'sales.post', 'sales.void',
         'sales.authorize_below_cost', 'sales.override_credit_limit', 'sales.view_margin',
         'receivables.view', 'receivables.collect', 'receivables.void',
-        'purchases.view', 'purchases.manage',
+        // Purchases (Phase 3): per-action permissions.
+        'suppliers.view', 'suppliers.manage',
+        'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.receive', 'purchases.void',
+        'payables.view', 'payables.pay',
         'finance.view', 'finance.manage',
         'ai.use', 'forecasts.view',
         'users.manage',
@@ -37,7 +40,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'sales.view', 'sales.create', 'sales.post', 'sales.void',
             'sales.authorize_below_cost', 'sales.override_credit_limit', 'sales.view_margin',
             'receivables.view', 'receivables.collect', 'receivables.void',
-            'purchases.view', 'purchases.manage',
+            // Approves, voids and pays (receiving too, as backup of the storekeeper).
+            'suppliers.view', 'suppliers.manage',
+            'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.receive', 'purchases.void',
+            'payables.view', 'payables.pay',
             'finance.view', 'finance.manage',
             'ai.use', 'forecasts.view',
         ],
@@ -49,8 +55,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'receivables.view', 'receivables.collect',
             'ai.use',
         ],
-        // Registers and posts stock documents, but cannot void them nor edit the catalog.
-        'almacenero' => ['dashboard.view', 'inventory.view', 'movements.create', 'movements.post', 'purchases.view'],
+        // Registers and posts stock documents and receives purchase orders; cannot void, approve nor pay.
+        'almacenero' => [
+            'dashboard.view', 'inventory.view', 'movements.create', 'movements.post',
+            'suppliers.view', 'purchases.view', 'purchases.receive',
+        ],
     ];
 
     /**
