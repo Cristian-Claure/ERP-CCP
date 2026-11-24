@@ -13,8 +13,12 @@ async function scan(page: Page, code: string) {
  */
 test('POS: escaneo, pago mixto con cambio y ticket', async ({ page }) => {
   await page.goto('/pos')
+  const catalog = page.waitForResponse((r) => r.url().includes('/api/v1/pos/catalog'))
   await page.getByRole('combobox', { name: 'Almacén del punto de venta' }).click()
   await page.getByRole('option', { name: 'Central Santa Cruz' }).click()
+  // Wait for the catalog before scanning (in dev the page may re-mount right after loading).
+  await catalog
+  await page.waitForLoadState('networkidle')
 
   const search = page.getByRole('textbox', { name: 'Buscar producto' })
   await expect(search).toBeVisible()
