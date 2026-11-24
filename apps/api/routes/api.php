@@ -144,6 +144,7 @@ Route::prefix('v1')->name('v1.')->group(function (): void {
         // ---- Atlas (3D globe) --------------------------------------------------
         Route::get('atlas/customers', [AtlasController::class, 'customers'])->name('atlas.customers');
         Route::get('atlas/warehouses', [AtlasController::class, 'warehouses'])->name('atlas.warehouses');
+        Route::get('atlas/suppliers', [AtlasController::class, 'suppliers'])->name('atlas.suppliers');
 
         Route::get('dashboard/sales', [SalesOverviewController::class, 'dashboard'])->name('dashboard.sales');
         Route::get('settings/sales', [SalesOverviewController::class, 'settings'])->name('settings.sales');

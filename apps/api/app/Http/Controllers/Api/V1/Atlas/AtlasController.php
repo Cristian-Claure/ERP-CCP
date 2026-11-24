@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Atlas;
 
 use App\Domain\Atlas\Queries\AtlasQueries;
+use App\Domain\Atlas\Queries\AtlasSupplierQueries;
 use App\Domain\Atlas\Services\AtlasCache;
+use App\Domain\Purchases\Models\Supplier;
 use App\Domain\Sales\Enums\CustomerSegment;
 use App\Domain\Sales\Enums\DebtStatus;
 use App\Domain\Sales\Models\Customer;
@@ -66,6 +68,29 @@ class AtlasController extends Controller
                 'segments' => array_map(fn (CustomerSegment $s) => ['value' => $s->value, 'label' => $s->label()], CustomerSegment::cases()),
                 'cache_version' => $this->cache->version($user->company_id),
             ],
+        ]);
+    }
+
+    /**
+     * GET /atlas/suppliers?period= — optional supplier layer (suppliers.view): suppliers with
+     * coordinates and inbound flows per warehouse (arcs supplier -> warehouse).
+     */
+    public function suppliers(Request $request, AtlasSupplierQueries $suppliers): JsonResponse
+    {
+        Gate::authorize('viewAny', Supplier::class);
+        $validated = $request->validate(['period' => ['nullable', Rule::in(AtlasQueries::PERIODS)]]);
+
+        $user = $request->user();
+        $withPayables = $user->can('payables.view');
+        $today = $this->dates->today($user->company);
+        $period = $validated['period'] ?? '90d';
+        [$from, $to] = $this->queries->range($period, $today);
+        $filters = ['period' => $period, 'payables' => $withPayables, 'today' => $today->toDateString()];
+
+        return response()->json([
+            'data' => $this->cache->remember($user->company_id, 'suppliers', $filters,
+                fn () => $suppliers->suppliers($user->company_id, $from, $to, $withPayables)),
+            'meta' => ['period' => ['key' => $period, 'from' => $from?->toDateString(), 'to' => $to->toDateString()], 'payables' => $withPayables],
         ]);
     }
 
