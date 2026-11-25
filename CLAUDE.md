@@ -84,6 +84,16 @@ docs/      architecture.md y ADRs (docs/adr/)
   (ojo: `--accent` de shadcn es la superficie de hover, no el cian). Números y códigos con la clase `num`
   (JetBrains Mono, tabular). Modo oscuro por defecto.
 - Montos: `formatCurrency()` de `src/lib/format.ts` (es-BO, BOB).
+- **Páginas delgadas:** una página solo enruta (editor vs. vista). Los editores de documentos viven en
+  `components/<area>/` partidos por responsabilidad (cabecera, líneas, totales, acciones) con hooks de
+  formulario (`use…Form`) y de flujo (`use…Flow`: guardar/confirmar/autorizar). Archivos ≤ ~300 líneas.
+
+### Tests E2E (e2e/)
+
+- Playwright (`@playwright/test`, imagen oficial `mcr.microsoft.com/playwright`, perfil compose `e2e`).
+  Un reenviador TCP mantiene los orígenes `localhost:5173/8000`, así las cookies de Sanctum funcionan igual.
+- Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido; solo local/testing).
+  Los tests no dependen de datos aleatorios del seed. CI corre el job `e2e` tras `api` y `web`.
 
 ### Servicio IA (apps/ai)
 
@@ -143,6 +153,7 @@ docs/      architecture.md y ADRs (docs/adr/)
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
 make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, ~90 días de compras, ventas y cobros; admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
+make e2e       # Playwright contra el stack levantado (fixtures: php artisan e2e:prepare)
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
 make logs      # logs de todos los servicios

@@ -132,3 +132,8 @@ export function daysFromToday(value: string): number {
   const today = new Date(`${todayIso()}T00:00:00`).getTime()
   return Math.round((target - today) / 86_400_000)
 }
+
+const dateTimeFmt = new Intl.DateTimeFormat('es-BO', { dateStyle: 'medium', timeStyle: 'short' })
+
+/** "24 nov 2026, 10:15": audit timestamps (created, posted, voided, authorized). */
+export const formatDateTime = (value: string) => dateTimeFmt.format(new Date(value))

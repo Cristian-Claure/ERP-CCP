@@ -26,8 +26,17 @@ class InventoryVerifier
      */
     public function verify(int $companyId): array
     {
-        $issues = [];
+        return [
+            ...$this->balanceIssues($companyId),
+            ...$this->missingBalances($companyId),
+            ...$this->movementIssues($companyId),
+        ];
+    }
 
+    /** Invariants 1, 2 and 5 on balances: quantity vs ledger sum, snapshot vs last movement, valuation. */
+    private function balanceIssues(int $companyId): array
+    {
+        $issues = [];
         $rows = DB::select(<<<'SQL'
             SELECT b.product_id, b.warehouse_id, b.quantity, b.avg_cost, b.total_value,
                    COALESCE(m.sum_qty, 0) AS sum_qty,
@@ -70,6 +79,13 @@ class InventoryVerifier
             }
         }
 
+        return $issues;
+    }
+
+    /** Invariant 3: every (product, warehouse) with movements has a balance row. */
+    private function missingBalances(int $companyId): array
+    {
+        $issues = [];
         foreach (DB::select(<<<'SQL'
             SELECT DISTINCT m.product_id, m.warehouse_id
             FROM stock_movements m
@@ -79,6 +95,13 @@ class InventoryVerifier
             $issues[] = $this->issue('missing_balance', $r, 'hay movimientos pero no existe el saldo');
         }
 
+        return $issues;
+    }
+
+    /** Invariants 4 and 5 on the immutable movements: running chain and non-negative valuation. */
+    private function movementIssues(int $companyId): array
+    {
+        $issues = [];
         foreach (DB::select(<<<'SQL'
             SELECT id, product_id, warehouse_id, quantity, quantity_after, prev_after, avg_cost_after, value_after
             FROM (

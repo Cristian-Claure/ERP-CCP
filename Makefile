@@ -6,10 +6,10 @@ WEB     := $(COMPOSE) exec -T web
 
 .DEFAULT_GOAL := help
 .PHONY: help env up down restart build fresh migrate test test-api test-ai test-web \
-        lint lint-api lint-ai lint-web format logs ps sh-api
+        lint lint-api lint-ai lint-web format logs ps sh-api e2e
 
 help: ## Show available commands
-	@echo "make env | up | down | restart | fresh | migrate | test | lint | format | logs | ps | sh-api"
+	@echo "make env | up | down | restart | fresh | migrate | test | e2e | lint | format | logs | ps | sh-api"
 
 env: ## Create .env from .env.example and generate secrets
 	docker run --rm -v "$(CURDIR):/app" -w /app php:8.5-cli-alpine php docker/scripts/init-env.php
@@ -41,6 +41,10 @@ test-ai:
 
 test-web:
 	$(WEB) npm run test
+
+e2e: ## End-to-end tests (Playwright) against the running stack
+	$(API) php artisan e2e:prepare
+	$(COMPOSE) --profile e2e run --rm e2e
 
 lint: lint-api lint-ai lint-web ## Run every linter
 
