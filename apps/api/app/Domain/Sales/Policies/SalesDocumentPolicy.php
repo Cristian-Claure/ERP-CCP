@@ -44,6 +44,12 @@ class SalesDocumentPolicy
         return $user->can('sales.post');
     }
 
+    /** Point of sale: creates AND posts in one step, so it needs both permissions. */
+    public function pos(User $user): bool
+    {
+        return $user->can('sales.create') && $user->can('sales.post');
+    }
+
     public function void(User $user, SalesDocument $document): bool
     {
         return $user->can('sales.void');

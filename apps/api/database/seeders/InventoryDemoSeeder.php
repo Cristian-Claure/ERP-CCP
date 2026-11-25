@@ -19,6 +19,7 @@ use App\Domain\Shared\Models\User;
 use App\Domain\Shared\Tenancy\RunsInCompanyContext;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoCustomers;
+use Database\Seeders\Demo\PurchaseDesk;
 use Database\Seeders\Demo\SalesDesk;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -117,6 +118,8 @@ class InventoryDemoSeeder extends Seeder
 
     private SalesDesk $desk;
 
+    private PurchaseDesk $purchasing;
+
     /** @var array<string, list<Customer>> warehouse code => customers it serves */
     private array $pools = [];
 
@@ -145,12 +148,15 @@ class InventoryDemoSeeder extends Seeder
         $seller = User::query()->withoutGlobalScopes()->where('email', 'vendedor@ccp.test')->firstOrFail();
         $manager = User::query()->withoutGlobalScopes()->where('email', 'gerente@ccp.test')->firstOrFail();
         $this->desk = new SalesDesk($seller, $manager, self::DAYS);
+        // Admin raises OCs, the manager approves and pays, the storekeeper receives.
+        $this->purchasing = new PurchaseDesk($this->admin, $manager, $this->storekeeper);
 
         $this->inCompany($company, function (Company $company) {
             $this->timezone = $company->timezone;
             mt_srand(self::SEED);
             $this->catalog();
             $this->customers($company);
+            $this->purchasing->suppliers($company->id);
 
             $start = CarbonImmutable::now($company->timezone)->startOfDay()->subDays(self::DAYS);
             try {
@@ -161,6 +167,7 @@ class InventoryDemoSeeder extends Seeder
             }
 
             $this->pendingDrafts(CarbonImmutable::now($company->timezone));
+            $this->purchasing->openOrders($this->warehouses[0], $this->products, CarbonImmutable::now($company->timezone));
             $this->quotes(CarbonImmutable::now($company->timezone));
         });
     }
@@ -192,7 +199,7 @@ class InventoryDemoSeeder extends Seeder
                 'min_price' => number_format($cost * 1.25, 2, '.', ''),
                 'is_active' => true,
             ]);
-            $this->meta[$sku] = ['min' => $min, 'demand' => $demand, 'cost' => $cost, 'fractional' => $units[$unit]->allows_decimals];
+            $this->meta[$sku] = ['min' => $min, 'demand' => $demand, 'cost' => $cost, 'fractional' => $units[$unit]->allows_decimals, 'category' => $category];
         }
 
         foreach ($this->warehouses as $w) {
@@ -245,6 +252,10 @@ class InventoryDemoSeeder extends Seeder
                 continue;
             }
 
+            // Remainders of partial receipts arrive before the shop opens.
+            $this->at($clock->subMinutes(30), fn () => $this->purchasing->receivePending($date, $day));
+            $this->syncStock();
+
             if ($date->isMonday()) {
                 $this->at($clock, fn () => $this->purchase($central, $day));
             }
@@ -260,6 +271,7 @@ class InventoryDemoSeeder extends Seeder
             }
 
             $this->at($clock->setTime(18, 0), fn () => $this->desk->settle($date));
+            $this->at($clock->setTime(18, 30), fn () => $this->purchasing->payDue($date));
 
             if ($day % 12 === 6) {
                 $this->at($clock->setTime(20, 0), fn () => $this->countAdjustment($this->warehouses[$day % 3], $day));
@@ -273,11 +285,17 @@ class InventoryDemoSeeder extends Seeder
         }
     }
 
-    private function purchase(Warehouse $central, int $day, bool $initial = false): ?InventoryDocument
+    /**
+     * Weekly replenishment of the Central warehouse through REAL purchase orders:
+     * one OC per supplier, approved by the manager and received by the storekeeper.
+     */
+    private function purchase(Warehouse $central, int $day, bool $initial = false): void
     {
-        $lines = [];
+        $needs = [];
+        $index = 0;
         foreach ($this->products as $sku => $product) {
             $m = $this->meta[$sku];
+            $index++;
             if (! $initial && in_array($sku, self::STOCKOUT_SKUS, true) && $day > self::DAYS - 24) {
                 continue;
             }
@@ -288,15 +306,17 @@ class InventoryDemoSeeder extends Seeder
                 continue;
             }
 
-            $quantity = $this->qty(max($target - $network, $m['demand'] * 7), $m['fractional']);
-            $drift = 1 + 0.0012 * $day + mt_rand(-300, 300) / 10_000;
-            $lines[] = ['product_id' => $product->id, 'quantity' => $quantity, 'unit_cost' => number_format($m['cost'] * $drift, 4, '.', '')];
+            $supplier = $this->purchasing->supplierFor($product, $m['category'], $index);
+            $needs[$supplier->id][] = [
+                'product' => $product,
+                'quantity' => $this->qty(max($target - $network, $m['demand'] * 7), $m['fractional']),
+                'cost' => $m['cost'] * (1 + 0.0012 * $day + mt_rand(-300, 300) / 10_000),
+                'fractional' => $m['fractional'],
+            ];
         }
 
-        return $this->postDoc('entry', $central, $lines, [
-            'reference' => sprintf('FAC-PROV-%05d', 1200 + $day),
-            'notes' => $initial ? 'Inventario inicial' : 'Compra semanal a proveedores',
-        ], $this->storekeeper);
+        $this->purchasing->purchase($central, $needs, CarbonImmutable::now($this->timezone), $day, $initial);
+        $this->syncStock();
     }
 
     private function transfer(Warehouse $from, Warehouse $to, int $day, bool $initial = false): ?InventoryDocument

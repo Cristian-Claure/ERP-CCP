@@ -4,18 +4,19 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/hooks'
 import { useInventoryDashboard } from '@/features/inventory/hooks'
+import { usePurchasesDashboard } from '@/features/purchases/hooks'
 import { useSalesDashboard } from '@/features/sales/hooks'
 import type { SalesDashboard } from '@/features/sales/types'
 
 import { InventoryValuationCard, LowStockCard } from '../components/InventoryWidgets'
 import { KpiCard, KpiCardSkeleton } from '../components/KpiCard'
+import { PayablesCard } from '../components/PurchasesWidgets'
 import {
   DailySalesChart,
   TopCustomersCard,
   TopProductsCard,
   WidgetSkeleton,
 } from '../components/SalesWidgets'
-import { useDashboardSummary } from '../hooks'
 import type { Kpi } from '../types'
 
 function greeting(date = new Date()): string {
@@ -52,8 +53,8 @@ export function DashboardPage() {
   const canSales = can('sales.view')
   const sales = useSalesDashboard(canSales)
   const inventory = useInventoryDashboard(canInventory)
-  // Only the "pending orders" KPI is still a demo (Purchases arrives in Phase 3).
-  const demo = useDashboardSummary()
+  const canPurchases = can('purchases.view')
+  const purchases = usePurchasesDashboard(canPurchases)
 
   const kpis: (Kpi | null)[] = []
   if (canSales) {
@@ -108,12 +109,28 @@ export function DashboardPage() {
         : null,
     )
   }
-  const pending = demo.data?.kpis.find((k) => k.key === 'pending_orders')
-  kpis.push(pending ?? null)
+  if (canPurchases) {
+    const p = purchases.data?.pending_orders
+    kpis.push(
+      p
+        ? {
+            key: 'pending_orders',
+            label: 'Órdenes de compra pendientes',
+            value: p.count,
+            format: 'integer',
+            delta: null,
+            higherIsBetter: false,
+            hint: `${new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', maximumFractionDigits: 0 }).format(Number(p.pending_value))} por recibir`,
+            source: 'live',
+          }
+        : null,
+    )
+  }
 
   const refresh = () => {
     void sales.refetch()
     void inventory.refetch()
+    void purchases.refetch()
   }
 
   return (
@@ -174,6 +191,7 @@ export function DashboardPage() {
           ))}
         {!canSales && canInventory && <InventoryValuationCard data={inventory.data?.valuation} />}
         {canInventory && <LowStockCard data={inventory.data?.low_stock} />}
+        {purchases.data?.payables && <PayablesCard aging={purchases.data.payables} />}
       </div>
     </div>
   )

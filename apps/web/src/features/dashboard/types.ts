@@ -15,8 +15,3 @@ export interface Kpi {
   /** live = real API data; demo = mock until its module exists. */
   source: 'live' | 'demo'
 }
-
-export interface DashboardSummary {
-  currency: string
-  kpis: Kpi[]
-}

@@ -38,6 +38,9 @@ class SalesDocumentResource extends JsonResource
             'payment_terms' => $this->payment_terms->value,
             'payment_terms_label' => $this->payment_terms->label(),
             'payment_method' => $this->payment_method?->value,
+            'channel' => $this->channel,
+            'cash_received' => $this->cash_received,
+            'change_amount' => $this->change_amount,
             'customer_id' => $this->customer_id,
             'customer' => $this->whenLoaded('customer', fn () => [
                 'id' => $this->customer->id,

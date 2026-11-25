@@ -13,14 +13,17 @@ import { useAuth } from '@/features/auth/hooks'
 import { useInventorySettings, useUpdateInventorySettings } from '@/features/inventory/hooks'
 import { useSalesSettings, useUpdateSalesSettings } from '@/features/sales/hooks'
 
+import { PurchasesSettingsCard } from '../components/PurchasesSettingsCard'
+
 export function SettingsPage() {
-  const { user } = useAuth()
+  const { user, can } = useAuth()
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Configuración" description={user?.company.legal_name} />
       <InventorySettingsCard />
       <SalesSettingsCard />
+      {can('purchases.view') && <PurchasesSettingsCard />}
     </div>
   )
 }

@@ -105,6 +105,16 @@ python docs/scripts/build_licenses.py web.json api.json ai.json > docs/LICENSES.
 | `pytest` | 9.2.0 | dev | MIT | Sí |
 | `ruff` | 0.17.6 | dev | MIT | Sí |
 
+## Pruebas end-to-end (e2e/)
+
+Fuera del script generador: paquete aparte, solo para pruebas.
+
+| Paquete / imagen | Versión | Uso | Licencia | OSI |
+|---|---|---|---|---|
+| `@playwright/test` | 1.65.1 | dev | Apache-2.0 | Sí |
+| `mcr.microsoft.com/playwright` (imagen Docker con Chromium) | v1.65.1-noble | dev | Apache-2.0 (Chromium: BSD-3-Clause) | Sí |
+| `typescript` | ~6.0 | dev | Apache-2.0 | Sí |
+
 ## Datos y servicios externos
 
 Ver [`CREDITS.md`](CREDITS.md) (mapas, texturas y datos geográficos).

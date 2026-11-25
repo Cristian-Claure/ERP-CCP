@@ -58,6 +58,8 @@ class SalesDocument extends Model
             'cost_total' => 'decimal:2',
             'margin_total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'cash_received' => 'decimal:2',
+            'change_amount' => 'decimal:2',
             'posted_at' => 'datetime',
             'voided_at' => 'datetime',
             'below_cost_authorized_at' => 'datetime',

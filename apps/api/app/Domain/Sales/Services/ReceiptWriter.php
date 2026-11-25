@@ -2,8 +2,10 @@
 
 namespace App\Domain\Sales\Services;
 
+use App\Domain\Sales\Data\TenderData;
 use App\Domain\Sales\Enums\PaymentMethod;
 use App\Domain\Sales\Enums\PaymentStatus;
+use App\Domain\Sales\Exceptions\InvalidSalesDocumentException;
 use App\Domain\Sales\Models\Customer;
 use App\Domain\Sales\Models\CustomerPayment;
 use App\Domain\Sales\Models\PaymentAllocation;
@@ -75,6 +77,38 @@ class ReceiptWriter
         $this->ledger->payment($customer, $payment, $actor->id);
 
         return $payment;
+    }
+
+    /**
+     * Automatic receipt(s) of a cash sale: one per tender (mixed payments), adding up
+     * exactly to the total. Called by PostSalesDocument with the customer locked.
+     *
+     * @param  list<TenderData>  $tenders
+     */
+    public function collectCashSale(SalesDocument $doc, Customer $customer, User $actor, array $tenders): void
+    {
+        $tenders = $tenders !== [] ? $tenders : [new TenderData($doc->payment_method ?? PaymentMethod::Cash, (string) $doc->total)];
+        $sum = array_reduce($tenders, fn (Number $s, TenderData $t) => $s + $t->amount(), new Number('0'));
+
+        if ($sum != Decimal::of($doc->total) || array_filter($tenders, fn (TenderData $t) => $t->amount() <= new Number('0')) !== []) {
+            throw InvalidSalesDocumentException::with(['payments' => sprintf(
+                'Los pagos (%s) deben sumar exactamente el total de la venta (%s).', Decimal::money($sum), $doc->total,
+            )]);
+        }
+
+        foreach ($tenders as $tender) {
+            $this->create(
+                $customer,
+                $doc->document_date,
+                $tender->method,
+                [[$doc, $tender->amount()]],
+                $actor,
+                notes: count($tenders) > 1
+                    ? sprintf('Cobro de la venta al contado %s (%s)', $doc->number, $tender->method->label())
+                    : sprintf('Cobro de la venta al contado %s', $doc->number),
+                automaticFor: $doc,
+            );
+        }
     }
 
     /**

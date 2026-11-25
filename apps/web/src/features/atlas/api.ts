@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
 
-import type { AtlasCustomersResponse, AtlasPeriod, AtlasWarehouse } from './types'
+import type { AtlasCustomersResponse, AtlasPeriod, AtlasSupplier, AtlasWarehouse } from './types'
 
 export interface AtlasFilters {
   period: AtlasPeriod
@@ -21,6 +21,8 @@ export const atlasApi = {
         },
       })
     ).data,
+  suppliers: async (period: AtlasPeriod) =>
+    (await api.get<{ data: AtlasSupplier[] }>('/api/v1/atlas/suppliers', { params: { period } })).data.data,
   warehouses: async () => (await api.get<{ data: AtlasWarehouse[] }>('/api/v1/atlas/warehouses')).data.data,
 }
 
@@ -34,3 +36,12 @@ export const useAtlasCustomers = (filters: AtlasFilters) =>
 
 export const useAtlasWarehouses = () =>
   useQuery({ queryKey: ['atlas', 'warehouses'], queryFn: atlasApi.warehouses, staleTime: 10 * 60_000 })
+
+export const useAtlasSuppliers = (period: AtlasPeriod, enabled: boolean) =>
+  useQuery({
+    queryKey: ['atlas', 'suppliers', period],
+    queryFn: () => atlasApi.suppliers(period),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  })

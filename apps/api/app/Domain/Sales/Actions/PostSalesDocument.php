@@ -10,7 +10,7 @@ use App\Domain\Inventory\Enums\DocumentType;
 use App\Domain\Inventory\Exceptions\InsufficientStockException;
 use App\Domain\Inventory\Models\InventoryDocument;
 use App\Domain\Sales\Data\PostingAuthorization;
-use App\Domain\Sales\Enums\PaymentMethod;
+use App\Domain\Sales\Data\TenderData;
 use App\Domain\Sales\Enums\PaymentTerms;
 use App\Domain\Sales\Enums\SalesDocumentStatus;
 use App\Domain\Sales\Events\SalesDocumentPosted;
@@ -40,7 +40,8 @@ use Illuminate\Support\Facades\DB;
  * For a sale: credit check -> number -> SAL- through the inventory Actions
  * (insufficient_stock aborts everything, no number consumed) -> cost and
  * margin per line from the SAL- -> price check (below cost / min price) ->
- * receivable charge (+ automatic receipt when cash) -> audit.
+ * receivable charge (+ automatic receipt when cash; one receipt per tender
+ * for mixed payments, e.g. part cash and part QR) -> audit.
  *
  * Lock order (shared with VoidSalesDocument, RegisterPayment and
  * VoidPayment): customer -> sales document -> stock balances.
@@ -60,14 +61,16 @@ class PostSalesDocument
     ) {}
 
     /**
+     * @param  list<TenderData>  $tenders  split of a cash sale by method (default: one tender for the total)
+     *
      * @throws InvalidSalesDocumentException|CreditLimitExceededException|PriceBelowCostException|InsufficientStockException|AuthorizationException
      */
-    public function handle(SalesDocument $document, User $actor, ?PostingAuthorization $authorization = null): SalesDocument
+    public function handle(SalesDocument $document, User $actor, ?PostingAuthorization $authorization = null, array $tenders = []): SalesDocument
     {
         $authorization ??= PostingAuthorization::none();
         $this->assertCanAuthorize($authorization, $actor);
 
-        return DB::transaction(function () use ($document, $actor, $authorization) {
+        return DB::transaction(function () use ($document, $actor, $authorization, $tenders) {
             [$customer, $doc] = $this->lock($document);
 
             if ($doc->status === SalesDocumentStatus::Posted) {
@@ -85,7 +88,7 @@ class PostSalesDocument
             $this->amounts->apply($doc, $company);
 
             if ($doc->type->isSale()) {
-                $this->postSale($doc, $customer, $company, $actor, $authorization);
+                $this->postSale($doc, $customer, $company, $actor, $authorization, $tenders);
             } else {
                 $doc->forceFill(['number' => $this->nextNumber($doc, $company)]);
             }
@@ -111,9 +114,15 @@ class PostSalesDocument
         });
     }
 
-    private function postSale(SalesDocument $doc, Customer $customer, Company $company, User $actor, PostingAuthorization $authorization): void
+    /**
+     * @param  list<TenderData>  $tenders
+     */
+    private function postSale(SalesDocument $doc, Customer $customer, Company $company, User $actor, PostingAuthorization $authorization, array $tenders): void
     {
         $isCredit = $doc->payment_terms === PaymentTerms::Credit;
+        if ($isCredit && $tenders !== []) {
+            throw InvalidSalesDocumentException::with(['payments' => 'Una venta a crédito no se cobra al confirmarla.']);
+        }
         $doc->due_date = $doc->document_date->copy()->addDays($isCredit ? $customer->credit_days : 0);
 
         // 1. Credit first: the total is already known, no need to touch stock.
@@ -139,15 +148,7 @@ class PostSalesDocument
         $this->ledger->charge($customer, $doc, $actor->id);
 
         if (! $isCredit) {
-            $this->receipts->create(
-                $customer,
-                $doc->document_date,
-                $doc->payment_method ?? PaymentMethod::Cash,
-                [[$doc, Decimal::of($doc->total)]],
-                $actor,
-                notes: sprintf('Cobro de la venta al contado %s', $doc->number),
-                automaticFor: $doc,
-            );
+            $this->receipts->collectCashSale($doc, $customer, $actor, $tenders);
         }
     }
 

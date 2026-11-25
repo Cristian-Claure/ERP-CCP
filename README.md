@@ -25,6 +25,12 @@ ERP web para pymes: inventario, ventas, compras, finanzas e inteligencia de nego
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Venta](docs/screenshots/sale.png) |
 | **Estado de cuenta del cliente** | **Documento imprimible (PDF)** |
 | ![Estado de cuenta](docs/screenshots/customer-statement.png) | ![PDF](docs/screenshots/print.png) |
+| **Punto de venta (lector de código de barras)** | **Cobro mixto con cambio** |
+| ![POS](docs/screenshots/pos.png) | ![Cobro](docs/screenshots/pos-checkout.png) |
+| **Órdenes de compra** | **Recepción: crédito fiscal, flete y costo por línea** |
+| ![Órdenes de compra](docs/screenshots/purchase-orders.png) | ![Recepción](docs/screenshots/purchase-receipt.png) |
+| **Cuentas por pagar** | **Atlas con la capa de proveedores** |
+| ![Cuentas por pagar](docs/screenshots/payables.png) | ![Atlas proveedores](docs/screenshots/atlas-suppliers.png) |
 
 ## Stack
 
@@ -33,7 +39,7 @@ ERP web para pymes: inventario, ventas, compras, finanzas e inteligencia de nego
 | API | Laravel 13 · PHP 8.5 · PostgreSQL 18 · Redis 8 · Sanctum (SPA, cookies) · spatie/laravel-permission · Pest |
 | Web | React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · shadcn/ui · TanStack Query · React Router · Zustand · React Hook Form + Zod · Recharts · Vitest |
 | IA | Python 3.12 · FastAPI · Pydantic v2 · uv · Ruff · pytest |
-| Infra | Docker Compose · nginx · Mailpit · GitHub Actions |
+| Infra | Docker Compose · nginx · Mailpit · GitHub Actions · Playwright (E2E) |
 
 ## Arranque rápido
 
@@ -65,6 +71,8 @@ make fresh   # migra y carga datos demo
 
 ```bash
 make test     # Pest + pytest + Vitest
+make e2e      # Playwright (venta, POS, inventario, compras) contra el stack levantado
+make screenshots  # regenera las capturas de este README
 make lint     # Pint + Ruff + ESLint, tsc y Prettier
 make format   # autoformatea todo
 make logs     # logs en vivo
@@ -91,9 +99,10 @@ Convenciones y reglas de base de datos en [`CLAUDE.md`](CLAUDE.md).
 - [x] **Fase 1 — Inventario:** productos, almacenes, ledger de movimientos, costo promedio, kardex con CSV, ajustes por conteo, anulaciones, numeración sin huecos, `inventory:verify` y DataTable reutilizable
 - [x] **Fase 2 — Ventas** ([ADR 0005](docs/adr/0005-ventas-impuestos-y-cuentas-por-cobrar.md)): clientes con ubicación, cotizaciones, facturas y notas de venta con salida de stock atómica (SAL- enlazado), IVA incluido desglosado, margen por línea, autorizaciones bajo costo y sobre límite de crédito, cobros, cuentas por cobrar con antigüedad, `customers:verify`, documento imprimible y dashboard con datos reales
 - [x] **Fase 2 · CCP Atlas** ([docs/frontend/atlas.md](docs/frontend/atlas.md)): globo 3D a medida (React Three Fiber + shaders propios) con el sol real, columnas de clientes por ventas y estado de cobro, clustering, arcos almacén → cliente, hexbins, tour y vista 2D sin WebGL
-- [ ] **Fase 2b · POS** — pantalla de mostrador ([plan](docs/roadmap/fase-2b-pos.md))
-- [ ] **Fase 3 — Compras:** proveedores, órdenes, recepciones con entrada a stock
-- [ ] **Fase 4 — Finanzas:** caja y bancos, cuentas por cobrar y por pagar
+- [x] **Fase 2b · POS** ([decisiones](docs/roadmap/fase-2b-pos.md)): mostrador a pantalla completa con catálogo cacheado y búsqueda local, lector de código de barras, NIT/CI rápido (crea el cliente al vuelo), pagos mixtos con cambio, ticket de 80 mm con importe en letras, venta atómica e idempotente sobre el mismo motor
+- [x] **Fase 3 — Compras** ([ADR 0006](docs/adr/0006-compras-costo-de-entrada-y-cuentas-por-pagar.md)): proveedores (locales e importación), órdenes de compra con aprobación por monto y segregación de funciones, recepciones parciales con tolerancia que generan la ENT-, costo de entrada con crédito fiscal (IVA por dentro) y flete prorrateado, diferencias de precio con motivo, cuentas por pagar con antigüedad y `suppliers:verify`, sugerencia de compra, capa de proveedores en Atlas
+- [ ] **Fase 4 — Finanzas:** caja y bancos (cobros y pagos contra cuentas), conciliación, flujo de caja
+- [ ] **Demo pública:** [opciones de despliegue](docs/roadmap/despliegue.md) a decidir
 - [ ] **Fase 5 — Inteligencia:** pronósticos de demanda reales y asistente IA sobre los datos de la empresa
 - [ ] **Fase 6 — Sistema:** gestión de usuarios y roles, configuración de empresa, auditoría visible
 

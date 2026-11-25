@@ -10,6 +10,8 @@ export interface Company {
   sales_note_vat_breakdown: boolean
   quote_validity_days: number
   default_customer_id: number | null
+  /** OCs above it need purchases.approve and someone other than their creator. */
+  purchase_approval_threshold?: string
   email: string | null
   phone: string | null
   address: string | null
@@ -22,6 +24,8 @@ export interface AuthUser {
   company: Company
   roles: string[]
   permissions: string[]
+  /** Warehouse the POS opens with (per-user preference). */
+  pos_warehouse_id: number | null
   last_login_at: string | null
 }
 

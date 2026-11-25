@@ -2,7 +2,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 
 import { latLngToVector3 } from '../lib/geo'
 import { useAtlasStore } from '../store'
-import type { AtlasCustomer, AtlasWarehouse } from '../types'
+import type { AtlasCustomer, AtlasSupplier, AtlasWarehouse } from '../types'
 import { Arcs, WarehouseMarkers } from './Arcs'
 import { Borders } from './Borders'
 import { CameraRig } from './CameraRig'
@@ -10,11 +10,13 @@ import { CustomerColumns, SalesHexbins } from './CustomerLayers'
 import { Earth } from './Earth'
 import { PerfMeter } from './PerfMeter'
 import { Stars } from './Stars'
+import { SupplierLayer } from './SupplierLayer'
 import { useAtlasTextures } from './useAtlasTextures'
 
 export interface AtlasSceneProps {
   customers: AtlasCustomer[]
   warehouses: AtlasWarehouse[]
+  suppliers: AtlasSupplier[]
   byStatus: boolean
   reducedMotion: boolean
   perf: boolean
@@ -40,7 +42,15 @@ export default function AtlasScene(props: AtlasSceneProps) {
   )
 }
 
-function SceneContent({ customers, warehouses, byStatus, reducedMotion, perf, tourStops }: AtlasSceneProps) {
+function SceneContent({
+  customers,
+  warehouses,
+  suppliers,
+  byStatus,
+  reducedMotion,
+  perf,
+  tourStops,
+}: AtlasSceneProps) {
   const gl = useThree((s) => s.gl)
   const textures = useAtlasTextures(gl.capabilities.getMaxAnisotropy())
   const mode = useAtlasStore((s) => s.mode)
@@ -61,6 +71,9 @@ function SceneContent({ customers, warehouses, byStatus, reducedMotion, perf, to
           )}
           {showArcs && <Arcs customers={customers} warehouses={warehouses} animate={!reducedMotion} />}
           <WarehouseMarkers warehouses={warehouses} />
+          {suppliers.length > 0 && (
+            <SupplierLayer suppliers={suppliers} warehouses={warehouses} animate={!reducedMotion} />
+          )}
         </>
       )}
       <CameraRig reducedMotion={reducedMotion} stops={tourStops} />

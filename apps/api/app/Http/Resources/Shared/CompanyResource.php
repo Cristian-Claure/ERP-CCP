@@ -28,6 +28,7 @@ class CompanyResource extends JsonResource
             'sales_note_vat_breakdown' => $this->sales_note_vat_breakdown,
             'quote_validity_days' => $this->quote_validity_days,
             'default_customer_id' => $this->default_customer_id,
+            'purchase_approval_threshold' => $this->purchase_approval_threshold,
             // Printed documents header.
             'email' => $this->email,
             'phone' => $this->phone,

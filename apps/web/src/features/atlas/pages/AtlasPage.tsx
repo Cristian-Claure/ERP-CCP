@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { cn } from 'cn'
 
-import { useAtlasCustomers, useAtlasWarehouses } from '../api'
+import { useAtlasCustomers, useAtlasSuppliers, useAtlasWarehouses } from '../api'
 import { cityRanking, computeKpis, tourStops } from '../lib/data'
 import { hasWebGL, prefersReducedMotion } from '../lib/device'
 import { periodLabel } from '../lib/periods'
@@ -37,6 +37,8 @@ export function AtlasPage() {
   const selectedId = useAtlasStore((s) => s.selectedId)
   const { data, isError, refetch } = useAtlasCustomers({ period, segments, status })
   const { data: warehouses = [] } = useAtlasWarehouses()
+  const showSuppliers = useAtlasStore((s) => s.showSuppliers)
+  const { data: suppliers } = useAtlasSuppliers(period, showSuppliers)
   const perf = useAtlasStore((s) => s.perf)
 
   const customers = useMemo(() => data?.data ?? [], [data])
@@ -67,6 +69,7 @@ export function AtlasPage() {
             <AtlasScene
               customers={customers}
               warehouses={warehouses}
+              suppliers={showSuppliers ? (suppliers ?? []) : []}
               byStatus={byStatus}
               reducedMotion={reducedMotion}
               perf={search.get('perf') === '1'}

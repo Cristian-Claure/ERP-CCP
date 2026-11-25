@@ -44,6 +44,24 @@ export interface AtlasWarehouse {
   lng: number
 }
 
+/** Supplier layer (GET /atlas/suppliers): inbound flows per destination warehouse. */
+export interface AtlasSupplier {
+  id: number
+  name: string
+  tax_id: string
+  country: string
+  city: string | null
+  lat: number
+  lng: number
+  issues_invoice: boolean
+  lead_time_days: number
+  purchases_total: string
+  receipts_count: number
+  last_receipt_at: string | null
+  balance: string | null
+  flows: { warehouse_id: number; total: string; count: number }[]
+}
+
 export type AtlasMode = 'columns' | 'hexbin'
 
 export interface FlyTarget {

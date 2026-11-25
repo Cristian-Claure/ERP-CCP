@@ -25,17 +25,42 @@ interface ArcsProps {
   animate: boolean
 }
 
-/**
- * Animated arcs from the warehouse that served each customer to the
- * customer, with particles travelling along them. All arcs share ONE
- * LineSegments geometry and one shader (a single draw call).
- */
+/** One flow drawn as an arc: from -> to, weighted by its amount. */
+export interface ArcFlow {
+  from: { lat: number; lng: number }
+  to: { lat: number; lng: number }
+  total: number
+}
+
+/** Sales arcs: warehouse that served each customer -> customer (cyan). */
 export function Arcs({ customers, warehouses, animate }: ArcsProps) {
-  const geometry = useMemo(() => {
+  const flows = useMemo<ArcFlow[]>(() => {
     const byId = new Map(warehouses.map((w) => [w.id, w]))
-    const flows = customers
-      .flatMap((c) => c.flows.map((f) => ({ c, f, total: Number(f.total) })))
-      .filter((x) => x.total > 0 && byId.has(x.f.warehouse_id))
+    return customers.flatMap((c) =>
+      c.flows
+        .filter((f) => byId.has(f.warehouse_id))
+        .map((f) => ({ from: byId.get(f.warehouse_id)!, to: c, total: Number(f.total) })),
+    )
+  }, [customers, warehouses])
+  return <FlowArcs flows={flows} palette={['#22d3ee', '#a5b4fc']} animate={animate} />
+}
+
+/**
+ * Animated arcs with particles travelling along them. All arcs of a layer
+ * share ONE LineSegments geometry and one shader (a single draw call).
+ */
+export function FlowArcs({
+  flows: input,
+  palette,
+  animate,
+}: {
+  flows: ArcFlow[]
+  palette: [string, string]
+  animate: boolean
+}) {
+  const geometry = useMemo(() => {
+    const flows = input
+      .filter((x) => x.total > 0)
       .sort((a, b) => b.total - a.total)
       .slice(0, MAX_ARCS)
 
@@ -44,13 +69,12 @@ export function Arcs({ customers, warehouses, animate }: ArcsProps) {
     const progress = new Float32Array(flows.length * SEGMENTS * 2)
     const seeds = new Float32Array(flows.length * SEGMENTS * 2)
     const colors = new Float32Array(flows.length * SEGMENTS * 2 * 3)
-    const cold = new Color('#22d3ee')
-    const hot = new Color('#a5b4fc')
+    const cold = new Color(palette[0])
+    const hot = new Color(palette[1])
     const color = new Color()
 
-    flows.forEach(({ c, f, total }, a) => {
-      const w = byId.get(f.warehouse_id)!
-      const points = greatCircleArc({ lat: w.lat, lng: w.lng }, { lat: c.lat, lng: c.lng }, SEGMENTS, 1.002)
+    flows.forEach(({ from, to, total }, a) => {
+      const points = greatCircleArc(from, to, SEGMENTS, 1.002)
       const seed = (a * 0.618034) % 1
       color.copy(cold).lerp(hot, Math.sqrt(total / max))
       for (let i = 0; i < SEGMENTS; i++) {
@@ -74,7 +98,7 @@ export function Arcs({ customers, warehouses, animate }: ArcsProps) {
     g.setAttribute('arcColor', new BufferAttribute(colors, 3))
     g.computeBoundingSphere()
     return g
-  }, [customers, warehouses])
+  }, [input, palette])
 
   const lineRef = useRef<LineSegments>(null)
   const material = useMemo(

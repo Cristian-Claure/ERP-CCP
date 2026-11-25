@@ -145,6 +145,9 @@ export interface SalesDocument {
   payment_terms: PaymentTerms
   payment_terms_label: string
   payment_method: PaymentMethod | null
+  channel?: 'desk' | 'pos'
+  cash_received?: string | null
+  change_amount?: string | null
   customer_id: number
   customer?: {
     id: number

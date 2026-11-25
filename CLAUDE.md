@@ -92,7 +92,10 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 - Playwright (`@playwright/test`, imagen oficial `mcr.microsoft.com/playwright`, perfil compose `e2e`).
   Un reenviador TCP mantiene los orígenes `localhost:5173/8000`, así las cookies de Sanctum funcionan igual.
-- Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido; solo local/testing).
+- Datos propios con `php artisan e2e:prepare` (productos `E2E-00x` con costo conocido y «Proveedor E2E SRL»; solo local/testing).
+- Esperar los datos de la página antes de interactuar (`waitForResponse`) en vez de `waitForTimeout`.
+- `AppShell` anima solo la entrada de cada página: una animación de salida con `AnimatePresence` montaba la página
+  nueva dos veces (el contenedor saliente tenía un `<Outlet/>` vivo) y se perdía lo escrito. No reintroducirla así.
   Los tests no dependen de datos aleatorios del seed. CI corre el job `e2e` tras `api` y `web`.
 
 ### Servicio IA (apps/ai)
@@ -136,9 +139,25 @@ docs/      architecture.md y ADRs (docs/adr/)
     Crédito se valida antes del SAL-; precio bajo costo/mínimo después (necesita el costo real). Excepciones solo con
     `sales.authorize_below_cost` / `sales.override_credit_limit` + motivo (auditado). Costos y márgenes en la API solo
     con `sales.view_margin`; saldos y deuda solo con `receivables.view`.
+10b. **POS (Fase 2b):** `PosCheckout` no contiene reglas de negocio: orquesta `SaveSalesDraft` + `PostSalesDocument`
+    en una transacción (Idempotency-Key obligatoria). Pagos mixtos = `tenders` de `PostSalesDocument` (un COB- automático por
+    medio; deben sumar el total); el efectivo entregado y el cambio viven en `sales_documents.cash_received/change_amount`.
 11. **Cuentas por cobrar:** `customer_ledger_entries` inmutable (`charge` +, `payment` −, `reversal`), escrito solo por
     `CustomerLedger`; `customers.balance` y `sales_documents.paid_amount` son cachés. `php artisan customers:verify [--repair]`.
     La fecha de cualquier documento respeta `DocumentDateWindow` (Shared).
+
+12. **Compras (ADR 0006):** `PostPurchaseReceipt` / `VoidPurchaseReceipt` crean y anulan la ENT- **solo** con las Actions
+    de inventario (`source = purchase_receipt`). La recepción es también la factura del proveedor (número único por
+    proveedor). Costo de entrada con `PurchaseCostCalculator`: con factura, IVA **por dentro** (`Shared\Support\Vat`,
+    `total × 0,13`, igual que ventas) como crédito fiscal y costo = neto; sin factura, costo = total pagado; gastos
+    adicionales prorrateados por valor (residuo a la última línea). **Orden de bloqueos: proveedor → OC → recepción →
+    saldos de stock.** OC por encima de `purchase_approval_threshold` exige `purchases.approve` y otra persona que su
+    creador (`self_approval_not_allowed`). Sobre-recepción solo dentro de `purchase_receipt_tolerance_pct`.
+13. **Cuentas por pagar:** `supplier_ledger_entries` inmutable, escrito solo por `SupplierLedger`; `suppliers.balance`,
+    `purchase_receipts.paid_amount` y `purchase_order_lines.received_quantity` son cachés.
+    `php artisan suppliers:verify [--repair]`. Saldos y antigüedad solo con `payables.view`.
+14. **Sugerencia de compra:** depender de `PurchaseSuggestionProvider` (nunca de la implementación); la Fase 5 cambia el
+    binding por el pronóstico de IA.
 
 ### CCP Atlas (apps/web/src/features/atlas)
 
@@ -151,9 +170,10 @@ docs/      architecture.md y ADRs (docs/adr/)
 
 ```bash
 make up        # construye y levanta todo (espera healthchecks); crea .env si falta
-make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, ~90 días de compras, ventas y cobros; admin@ccp.test / password)
+make fresh     # migrate:fresh --seed (empresa demo, ~120 clientes, 15 proveedores, ~90 días de OC/recepciones, ventas, cobros y pagos; admin@ccp.test / password)
 make test      # Pest + pytest + Vitest
 make e2e       # Playwright contra el stack levantado (fixtures: php artisan e2e:prepare)
+make screenshots # regenera docs/screenshots con Playwright (proyecto opcional CAPTURE=1)
 make lint      # Pint + Ruff + ESLint/tsc/Prettier
 make format    # autoformatea los tres servicios
 make logs      # logs de todos los servicios

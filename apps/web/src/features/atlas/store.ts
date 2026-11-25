@@ -9,6 +9,8 @@ interface AtlasState {
   status: string | null
   mode: AtlasMode
   showArcs: boolean
+  /** Optional supplier layer (markers + inbound arcs supplier -> warehouse). */
+  showSuppliers: boolean
   showBorders: boolean
   showClouds: boolean
   /** Hours added to "now" for the sun position (time control). */
@@ -41,6 +43,7 @@ export const useAtlasStore = create<AtlasState>((set) => ({
   status: null,
   mode: 'columns',
   showArcs: true,
+  showSuppliers: false,
   showBorders: true,
   showClouds: true,
   timeOffsetHours: 0,
